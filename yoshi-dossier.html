@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yoshi — Project Dossier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@300;400;500&family=Xanh+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  /* ==========================================================
+     YOSHI DOSSIER · v3 · "Fresh Manual"
+     White paper, saturated single ink, technical-manual rigor.
+     Reference: PLOTTER notebooks, IBM 5110 manual, prescription
+     pad, fisheries report, period type-specimen sheets.
+     ========================================================== */
+
+  :root {
+    /* paper */
+    --paper:        #FFFFFF;
+    --paper-warm:   #FCFCFA;   /* barely-there off-white for sidebars */
+    --rule:         #E6E5E1;   /* hairline rules */
+    --rule-strong:  #1A1A1A;
+
+    /* ink */
+    --ink:          #111111;   /* primary text */
+    --ink-mid:      #5A5A56;   /* secondary text */
+    --ink-light:    #9A9994;   /* tertiary, captions */
+    --ink-faint:    #C8C7C2;   /* dimensions, ticks */
+
+    /* signal — saturated, single ink */
+    --signal:       #E83A0C;   /* hot orange-red, the "stamp" color */
+    --signal-soft:  #FFEDE6;   /* signal tint for highlight bars */
+
+    /* yoshi accents — used sparingly, never washed */
+    --amber:        #F0AD3B;   /* YoshiOS amber, for OS-related marks */
+    --amber-deep:   #C48A2A;
+    --bench:        #D4B896;   /* bench wood tone, used flat */
+    --steel:        #C8C8C8;   /* structural gray */
+
+    /* type */
+    --sans:  'DM Sans', -apple-system, sans-serif;
+    --mono:  'DM Mono', ui-monospace, monospace;
+    --serif: 'Xanh Mono', ui-monospace, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "kern", "liga", "calt", "ss01";
+  }
+
+  /* ==========================================================
+     PAGE FRAME
+     ========================================================== */
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 48px;
+  }
+
+  /* Hairline running header — appears on every "page" */
+  .running-head {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 18px 0 12px 0;
+    border-bottom: 0.5px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+  }
+  .running-head .center { text-align: center; }
+  .running-head .right  { text-align: right; }
+
+  /* ==========================================================
+     COVER — v3.1
+     Watermark van behind oversized display title.
+     Top accent strip (signal). Sparse bottom meta.
+     ========================================================== */
+
+  .cover {
+    min-height: 100vh;
+    padding: 0 48px 48px 48px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* hot stripe across the very top */
+  .cover-strip {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 36px;
+    background: var(--signal);
+    z-index: 1;
+  }
+
+  .cover-head {
+    margin-top: 60px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
+    padding-bottom: 14px;
+    border-bottom: 0.5px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    position: relative;
+    z-index: 3;
+  }
+  .cover-head .center { text-align: center; }
+  .cover-head .right  { text-align: right; color: var(--ink-light); }
+
+  /* the watermark sits absolute, low z */
+  .cover-watermark {
+    position: absolute;
+    top: 100px;
+    left: 0;
+    right: 0;
+    bottom: 220px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .cover-watermark svg {
+    width: 95%;
+    max-width: 1200px;
+    height: auto;
+    opacity: 0.85;
+  }
+
+  /* the title sits over the watermark, centered vertically in the upper area */
+  .cover-title-row {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 60px 0;
+  }
+
+  .cover h1 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: clamp(64px, 13vw, 156px);
+    line-height: 0.92;
+    letter-spacing: -0.045em;
+    color: var(--ink);
+    margin: 0;
+    white-space: nowrap;
+  }
+  .cover h1 .title-mark {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-style: normal;
+    color: var(--ink);
+    letter-spacing: -0.045em;
+  }
+  .cover h1 .title-slash {
+    font-family: var(--sans);
+    font-weight: 300;
+    color: var(--ink-light);
+    margin: 0 0.05em;
+    letter-spacing: -0.02em;
+  }
+  .cover h1 .title-italic {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  /* bottom strip with blurb + meta */
+  .cover-bottom {
+    position: relative;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) auto;
+    gap: 64px;
+    align-items: end;
+    padding-top: 32px;
+    border-top: 0.5px solid var(--rule);
+  }
+
+  .cover-blurb {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    line-height: 1.7;
+    max-width: 420px;
+  }
+
+  .cover-meta {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 24px 56px;
+  }
+  .cover-meta dt {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 6px;
+  }
+  .cover-meta dd {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 400;
+    line-height: 1.45;
+  }
+  .cover-meta dd .meta-sub {
+    color: var(--ink-light);
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+
+  .cover-foot {
+    margin-top: 24px;
+    border-top: 1px solid var(--ink);
+    padding-top: 0;
+    height: 0;
+  }
+
+  /* registration marks */
+  .reg {
+    position: absolute;
+    width: 14px; height: 14px;
+    border: 0.5px solid var(--ink-faint);
+    z-index: 2;
+  }
+  .reg::before, .reg::after {
+    content: '';
+    position: absolute;
+    background: var(--ink-faint);
+  }
+  .reg::before { top: 50%; left: -3px; right: -3px; height: 0.5px; }
+  .reg::after  { left: 50%; top: -3px; bottom: -3px; width: 0.5px; }
+  .reg-tl { top: 50px; left: 16px; }
+  .reg-tr { top: 50px; right: 16px; }
+  .reg-bl { bottom: 16px; left: 16px; }
+  .reg-br { bottom: 16px; right: 16px; }
+
+  /* ==========================================================
+     CONTENTS PAGE
+     ========================================================== */
+
+  .toc {
+    padding: 60px 0 80px 0;
+  }
+
+  .toc-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 40px;
+    letter-spacing: -0.01em;
+    margin-bottom: 48px;
+    color: var(--ink);
+  }
+
+  .toc-list {
+    list-style: none;
+    border-top: 1px solid var(--ink);
+  }
+  .toc-list li {
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    align-items: baseline;
+    padding: 18px 0;
+    border-bottom: 0.5px solid var(--rule);
+    transition: background 0.2s ease;
+  }
+  .toc-list li:hover {
+    background: var(--paper-warm);
+  }
+  .toc-list a {
+    display: contents;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .toc-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--signal);
+    letter-spacing: 0.06em;
+  }
+  .toc-name {
+    font-family: var(--sans);
+    font-weight: 400;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+  }
+  .toc-name span {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-top: 3px;
+    font-weight: 400;
+  }
+  .toc-page {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-mid);
+    letter-spacing: 0.06em;
+  }
+
+  /* ==========================================================
+     SECTION FRAMING
+     ========================================================== */
+
+  .section {
+    padding: 64px 0 48px 0;
+    border-top: 1px solid var(--ink);
+  }
+  .section-head {
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    align-items: baseline;
+    margin-bottom: 32px;
+  }
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--signal);
+    letter-spacing: 0.08em;
+  }
+  .section-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 32px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .section-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+  }
+
+  /* Subsection */
+  .sub-head {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    align-items: baseline;
+    margin: 40px 0 16px 0;
+  }
+  .sub-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-light);
+    letter-spacing: 0.08em;
+  }
+  .sub-name {
+    font-family: var(--sans);
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  /* Body prose */
+  .prose {
+    margin-left: 60px;
+    max-width: 660px;
+    color: var(--ink);
+  }
+  .prose p {
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+  .prose p.lead {
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--ink);
+    font-weight: 400;
+    margin-bottom: 24px;
+  }
+  .prose em {
+    font-family: var(--serif);
+    font-style: italic;
+  }
+  .prose strong {
+    font-weight: 600;
+  }
+  .prose a {
+    color: var(--signal);
+    text-decoration: none;
+    border-bottom: 1px solid var(--signal-soft);
+    padding-bottom: 1px;
+    transition: border-color 0.15s ease;
+  }
+  .prose a:hover {
+    border-bottom-color: var(--signal);
+  }
+  .prose code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--paper-warm);
+    padding: 2px 6px;
+    border: 0.5px solid var(--rule);
+    border-radius: 2px;
+    color: var(--ink);
+  }
+
+  /* ==========================================================
+     KEY/VALUE STRIP — fact tables
+     ========================================================== */
+
+  .kv {
+    margin-left: 60px;
+    margin-top: 24px;
+    border-top: 0.5px solid var(--ink);
+    border-bottom: 0.5px solid var(--rule);
+    max-width: 720px;
+  }
+  .kv dl {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    border-bottom: 0.5px solid var(--rule);
+  }
+  .kv dl:last-child { border-bottom: none; }
+  .kv dt {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    padding: 12px 16px 12px 0;
+  }
+  .kv dd {
+    padding: 12px 0;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .kv dd .mono { font-family: var(--mono); font-size: 12px; }
+  .kv dd .signal-tag {
+    display: inline-block;
+    background: var(--signal-soft);
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    margin-left: 6px;
+    border-radius: 2px;
+  }
+
+  /* ==========================================================
+     FIGURE / DIAGRAM
+     ========================================================== */
+
+  .figure {
+    margin: 40px 0 40px 60px;
+    max-width: 820px;
+  }
+  .fig-frame {
+    border: 0.5px solid var(--rule);
+    background: var(--paper);
+    padding: 24px;
+    position: relative;
+  }
+  .fig-frame svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .fig-cap {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--ink-mid);
+  }
+  .fig-cap .label {
+    color: var(--signal);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .fig-cap .num {
+    color: var(--ink-light);
+  }
+
+  /* ==========================================================
+     STAMP-STYLE CALLOUT
+     ========================================================== */
+
+  .stamp-card {
+    margin: 40px 0 40px 60px;
+    max-width: 720px;
+    border: 1.5px solid var(--signal);
+    padding: 22px 26px;
+    background: var(--paper);
+    position: relative;
+  }
+  .stamp-card::before {
+    content: attr(data-stamp);
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--paper);
+    padding: 0 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--signal);
+    font-weight: 500;
+  }
+  .stamp-card h4 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .stamp-card p {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-mid);
+    margin-bottom: 8px;
+  }
+  .stamp-card p:last-child { margin-bottom: 0; }
+
+  /* ==========================================================
+     COMPARISON TABLE — sound deadening
+     ========================================================== */
+
+  .compare {
+    margin: 32px 0 32px 60px;
+    border-collapse: collapse;
+    width: calc(100% - 60px);
+    max-width: 820px;
+    font-size: 12px;
+  }
+  .compare thead th {
+    text-align: left;
+    padding: 14px 16px 14px 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    border-bottom: 1px solid var(--ink);
+    vertical-align: bottom;
+  }
+  .compare thead th.col-feat { width: 28%; color: var(--ink-light); }
+  .compare thead th.col-prem { color: var(--signal); }
+  .compare thead th.col-opt  { color: var(--ink); }
+  .compare tbody td {
+    padding: 14px 16px 14px 0;
+    border-bottom: 0.5px solid var(--rule);
+    vertical-align: top;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .compare tbody td.feat {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    width: 28%;
+  }
+  .compare tbody td .stack {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-mid);
+    margin-top: 4px;
+    line-height: 1.6;
+  }
+  .compare tbody td strong { font-weight: 600; color: var(--ink); }
+
+  /* ==========================================================
+     STATUS LIST — checkbox-style
+     ========================================================== */
+
+  .status-list {
+    margin-left: 60px;
+    margin-top: 16px;
+    max-width: 720px;
+    list-style: none;
+  }
+  .status-list li {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 13px;
+    color: var(--ink);
+    align-items: baseline;
+  }
+  .status-list .mark {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--signal);
+    letter-spacing: 0;
+    text-align: center;
+  }
+  .status-list .mark.done { color: var(--ink-mid); }
+  .status-list .mark.next { color: var(--signal); }
+
+  /* ==========================================================
+     FOOTER / COLOPHON
+     ========================================================== */
+
+  .colophon {
+    margin-top: 80px;
+    padding: 32px 0 48px 0;
+    border-top: 1px solid var(--ink);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--ink-light);
+  }
+  .colophon h5 {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+  .colophon p { line-height: 1.7; }
+
+  /* ==========================================================
+     RESPONSIVE
+     ========================================================== */
+
+  @media (max-width: 760px) {
+    .page, .cover { padding-left: 24px; padding-right: 24px; }
+    .cover-bottom { grid-template-columns: 1fr; gap: 28px; }
+    .cover-meta { grid-template-columns: 1fr 1fr; gap: 20px 32px; }
+    .cover h1 { font-size: 56px; white-space: normal; }
+    .cover-watermark { bottom: 280px; }
+    .toc-list li { grid-template-columns: 40px 1fr auto; }
+    .section-head { grid-template-columns: 40px 1fr; gap: 12px; }
+    .section-tag { display: none; }
+    .sub-head, .prose, .kv, .figure, .stamp-card, .compare, .status-list {
+      margin-left: 0;
+    }
+    .compare { width: 100%; }
+    .kv dl { grid-template-columns: 130px 1fr; }
+    .colophon { grid-template-columns: 1fr; gap: 24px; }
+    .reg { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     COVER
+============================================================ -->
+<div class="cover">
+  <div class="reg reg-tl"></div>
+  <div class="reg reg-tr"></div>
+  <div class="reg reg-bl"></div>
+  <div class="reg reg-br"></div>
+
+  <!-- accent strip across the top -->
+  <div class="cover-strip"></div>
+
+  <div class="cover-head">
+    <div class="left">Project Dossier · v5</div>
+    <div class="center">DOC&nbsp;·&nbsp;YO&#8209;001</div>
+    <div class="right">Compiled 15 May 2026</div>
+  </div>
+
+  <!-- watermark van behind everything -->
+  <div class="cover-watermark" aria-hidden="true">
+    <svg viewBox="0 0 740.09 334.71" xmlns="http://www.w3.org/2000/svg">
+      <g fill="none" stroke="#D8D7D2" stroke-width="0.5" stroke-miterlimit="10">
+        <path d="M219.6,284.73l-6.28-26.28c-3.15-13.15-10.84-24.48-21.67-31.89-3.84-2.63-13.06-4.15-15.28-4.15h-46.62c-3.52,0-8.47,1.92-11.11,3.07-9.78,4.28-17.17,12.66-20.28,22.98l-5.65,19.29h-56.5v2.08H.12v-19.46h24.57l-14.19-77.2h1.74v-16.54h-2.77L75.31,20.89h51.13l6.68,6.24h130.09v-6.24h18.77v6.24h181.82l3.68-6.24h137.15l27.31,23.31v4.69l67.34,84.84h9.11l23.57,27.62-2.98,53.11h-20.83c-4.49,0-8.65,2.44-10.85,6.36l-11.5,20.56h37.68l-.69,5.88h17.17v12.73c-.22,1.56-1.09,4.8-2.53,5.52-2.04.96-24.84,5.06-38.84,7.43h-7.76l.37-6.15-73.86,10.15-20.22-42.57c-3.44-7.27-10.87-11.96-18.92-11.96h-42.52c-2.52,0-14.8,2.37-19.2,6.32-13.36,11.98-21.4,28.61-22.62,46.84l-.62,9.15H219.6Z"/>
+        <rect x="60.74" y="46.62" width="572.88" height="3.39"/>
+        <path d="M553.32,334.58c-28.46,0-51.61-23.15-51.61-51.61s23.15-51.61,51.61-51.61,51.61,23.15,51.61,51.61-23.15,51.61-51.61,51.61ZM553.32,248.73c-18.88,0-34.24,15.36-34.24,34.24s15.36,34.24,34.24,34.24,34.24-15.36,34.24-34.24-15.36-34.24-34.24-34.24Z"/>
+        <path d="M153.86,334.58c-28.46,0-51.61-23.15-51.61-51.61s23.15-51.61,51.61-51.61,51.61,23.15,51.61,51.61-23.15,51.61-51.61,51.61ZM153.86,248.73c-18.88,0-34.24,15.36-34.24,34.24s15.36,34.24,34.24,34.24,34.24-15.36,34.24-34.24-15.36-34.24-34.24-34.24Z"/>
+        <path d="M720.69,199.93c-3.66,0-4-2.52-4.02-3.3v-24.03c0-2.72,2.92-4.42,3.84-4.89h11.01l-1.54,32.22h-9.29Z"/>
+        <path d="M724.21,202.16l-3.22-1.07c2.71-8.1,2.84-16.27,2.84-17.83,0-2.23-.23-10-3.25-16.53l3.08-1.42c3.3,7.16,3.56,15.55,3.56,17.95,0,1.65-.15,10.3-3.02,18.9Z"/>
+        <polygon points="470.93 283.29 469.24 283.29 267.74 283.29 266.04 283.29 266.04 281.59 266.04 48.31 269.43 48.31 269.43 279.89 467.54 279.89 467.54 48.31 470.93 48.31 470.93 281.59 470.93 283.29"/>
+        <rect x="335.21" y="8.09" width="63.77" height="173.85" rx="7.91" ry="7.91" transform="translate(272.08 462.11) rotate(-90)"/>
+        <path d="M108.19,126.89c-1.6,0-3.06-.73-4.01-2.01-.95-1.28-1.24-2.9-.77-4.43l13.27-53.86c.62-2.03,2.54-3.46,4.76-3.46h130.53c2.62,0,4.75,2.13,4.75,4.75v54.26c0,2.62-2.13,4.75-4.75,4.75h-.71s-143.06.01-143.06.01Z"/>
+        <path d="M48.95,125.51l20.7-56.22c.14-.38.51-.63.92-.63h14.56l-16.89,56.54-.1.31h-19.19Z"/>
+        <path d="M498.16,126.89c-2.62,0-4.75-2.13-4.75-4.75v-54.26c0-2.62,2.13-4.75,4.75-4.75h113.39c2,0,3.87.98,4.99,2.63l41.94,57.66c.45.66.5,1.53.11,2.29-.36.68-1,1.11-1.74,1.18h-158.69Z"/>
+        <polygon points="691.05 268.96 687.68 268.6 690.1 245.41 690.26 243.89 691.79 243.89 725.71 243.89 725.71 247.28 693.32 247.28 691.05 268.96"/>
+        <rect x="21.28" y="237.73" width="81.7" height="3.39"/>
+        <rect x="604.21" y="237.73" width="121.84" height="3.39"/>
+        <rect x="203.35" y="237.7" width="305.32" height="3.39"/>
+        <rect x="10.89" y="156.97" width="668.78" height="3.39"/>
+        <rect x="8.13" y="170.13" width="671.54" height="3.39"/>
+        <rect x="599.4" y="61.77" width="3.39" height="67.16"/>
+        <rect x="602.17" y="61.77" width="3.39" height="67.16"/>
+        <path d="M618.75,277.2l-.51-1.18-13.85-31.84-4.26-8.77c-3.85-7.93-12.02-13.05-20.84-13.05h-65.76l-.31-.12-30.66-12.46-1.06-.43V48.31h3.39v158.74l29.29,11.9h65.1c10.1,0,19.48,5.87,23.89,14.96l4.29,8.84,13.37,30.73,57.47-7.93v-128.14c0-4.98-1.46-9.78-4.23-13.91l-60.1-74.15,2.63-2.13,60.15,74.2.05.06.04.06c3.18,4.7,4.85,10.19,4.85,15.86v131.1l-1.46.2-60.21,8.3-1.27.18Z"/>
+        <polygon points="74.55 269.47 71.16 269.47 71.16 143.12 71.16 142.14 72.01 141.65 81.14 136.44 109.31 47.76 112.54 48.79 84.17 138.1 83.96 138.73 83.39 139.06 74.55 144.11 74.55 269.47"/>
+        <polygon points="39.59 269.47 36.2 269.47 36.2 250.4 22.67 250.4 22.67 247.01 37.9 247.01 39.59 247.01 39.59 248.71 39.59 269.47"/>
+        <rect x="485.35" y="32.4" width="25.73" height="2.7" transform="translate(464.46 531.97) rotate(-90)"/>
+        <path d="M616.64,127.18v-25.98h1.93c1.3.97,5.75,4.91,5.75,13.54s-4.6,11.77-5.8,12.45h-1.88Z"/>
+        <path d="M492.42,227.63c-3.06,0-5.56-2.49-5.56-5.56s2.49-5.56,5.56-5.56,5.56,2.49,5.56,5.56-2.49,5.56-5.56,5.56Z"/>
+        <rect x="63.12" y="224.79" width="2.84" height="13.22" transform="translate(-166.85 295.95) rotate(-90)"/>
+        <rect x="196.4" y="-112.72" width="6.31" height="247.23" transform="translate(188.66 210.45) rotate(-90)"/>
+        <path d="M330.71,23.73V.12h101.46c13.38,0,24.37,10.44,25.25,23.61h-126.7Z"/>
+        <path d="M701.23,233.85c-.47,0-.71-.31-.79-.44-.08-.13-.25-.49-.04-.91l4.72-9.43c.74-1.49,2.29-2.44,3.94-2.44h4.44c.23,0,.36.13.42.21.06.08.15.24.1.46l-2.41,9.61c-.43,1.73-1.98,2.94-3.77,2.94h-6.62Z"/>
+        <rect x="714.04" y="226.24" width="23.94" height="3.39" transform="translate(369.24 900.06) rotate(-79.47)"/>
+        <path d="M716.55,142.39h-12.64c-8.06,0-13.18-7.33-13.83-8.3l-69.94-84.7,2.61-2.16,70,84.77.07.08.06.09c.04.07,4.46,6.83,11.03,6.83h12.64v3.39Z"/>
+        <path d="M732.99,163.86h-11.26c-8.06,0-13.18-7.33-13.83-8.3l-69.94-84.7,2.61-2.16,70,84.77.07.08.06.09c.04.07,4.46,6.83,11.03,6.83h11.26v3.39Z"/>
+        <rect x="690.58" y="130.35" width="9.52" height="3.39"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- title sits over the watermark -->
+  <div class="cover-title-row">
+    <h1>
+      <span class="title-mark">YOSHI</span><span class="title-slash"> / </span><span class="title-italic">dossier</span>
+    </h1>
+  </div>
+
+  <!-- bottom strip: blurb left, meta right -->
+  <div class="cover-bottom">
+    <div class="cover-blurb">
+      Vehicle build, electrical, telemetry compute, interior fabrication, and acoustic treatment. One running document for two parallel work streams.
+    </div>
+    <dl class="cover-meta">
+      <div>
+        <dt>Vehicle</dt>
+        <dd>1983 VW Vanagon GL Westfalia<br><span class="meta-sub">Pop-top · originally air-cooled · EJ22 Subaru-swapped</span></dd>
+      </div>
+      <div>
+        <dt>Streams</dt>
+        <dd>YoshiOS · onboard compute<br>Yoshi Interior · build &amp; soft goods</dd>
+      </div>
+      <div>
+        <dt>Date</dt>
+        <dd>15 May 2026<br><span class="meta-sub">v5 · revision live</span></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="cover-foot"></div>
+</div>
+
+<!-- ============================================================
+     CONTENTS
+============================================================ -->
+<div class="page">
+  <div class="running-head">
+    <div>Yoshi Dossier</div>
+    <div class="center">Contents</div>
+    <div class="right">02</div>
+  </div>
+
+  <div class="toc">
+    <h2 class="toc-title">Contents</h2>
+    <ol class="toc-list">
+      <li><a href="#sec-01"><span class="toc-num">§ 01</span><span class="toc-name">Vehicle Identity<span>VIN, registration, ownership history</span></span><span class="toc-page">04</span></a></li>
+      <li><a href="#sec-02"><span class="toc-num">§ 02</span><span class="toc-name">Drivetrain &amp; Powertrain<span>EJ22 swap, transmission, tires</span></span><span class="toc-page">05</span></a></li>
+      <li><a href="#sec-03"><span class="toc-num">§ 03</span><span class="toc-name">Electrical System<span>Starter, house, solar, charge paths</span></span><span class="toc-page">06</span></a></li>
+      <li><a href="#sec-04"><span class="toc-num">§ 04</span><span class="toc-name">Bench &amp; Bed Assembly<span>Structural drawings, foam &amp; soft goods</span></span><span class="toc-page">09</span></a></li>
+      <li><a href="#sec-05"><span class="toc-num">§ 05</span><span class="toc-name">YoshiOS<span>Onboard compute &amp; telemetry</span></span><span class="toc-page">12</span></a></li>
+      <li><a href="#sec-06"><span class="toc-num">§ 06</span><span class="toc-name">Sound &amp; Insulation Strategy<span>Two stacks compared</span></span><span class="toc-page">15</span></a></li>
+      <li><a href="#sec-07"><span class="toc-num">§ 07</span><span class="toc-name">Service Record<span>Maintenance &amp; repair chronology</span></span><span class="toc-page">17</span></a></li>
+      <li><a href="#sec-08"><span class="toc-num">§ 08</span><span class="toc-name">Open Items &amp; To-Do<span>Exterior, interior, mechanical</span></span><span class="toc-page">19</span></a></li>
+      <li><a href="#sec-09"><span class="toc-num">§ 09</span><span class="toc-name">Material Resources<span>Standing references</span></span><span class="toc-page">21</span></a></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============================================================
+     § 01 — VEHICLE IDENTITY
+============================================================ -->
+<div class="page">
+  <div class="running-head">
+    <div>Yoshi Dossier</div>
+    <div class="center">§ 01 &middot; Vehicle Identity</div>
+    <div class="right">04</div>
+  </div>
+
+  <section class="section" id="sec-01">
+    <div class="section-head">
+      <div class="section-num">§ 01</div>
+      <div class="section-name">Vehicle Identity</div>
+      <div class="section-tag">Registration · Ownership</div>
+    </div>
+
+    <div class="prose">
+      <p class="lead">A 1983 Volkswagen Vanagon GL Westfalia, exterior paint code L567 (ivory). Originally delivered as an air-cooled camper, now Subaru EJ22-swapped. Acquired August 2021 from a private seller in California with 224,132 miles. Currently registered in New York.</p>
+    </div>
+
+    <div class="kv">
+      <dl><dt>Make / Model</dt><dd>1983 Volkswagen Vanagon GL Westfalia</dd></dl>
+      <dl><dt>Platform</dt><dd>T3 &middot; pop-top &middot; rear-engine, rear-drive</dd></dl>
+      <dl><dt>Exterior</dt><dd>Ivory &middot; <span class="mono">paint code L567</span></dd></dl>
+      <dl><dt>VIN</dt><dd><span class="mono">WV2ZB0252DH109711</span></dd></dl>
+      <dl><dt>Plate (current)</dt><dd><span class="mono">KSP 9306</span> · New York</dd></dl>
+      <dl><dt>Plate (prior)</dt><dd><span class="mono">8RPR438</span> · California</dd></dl>
+      <dl><dt>Acquired</dt><dd>30 Aug 2021 from Jair Melendez &middot; <span class="mono">$18,000</span></dd></dl>
+      <dl><dt>Mileage at purchase</dt><dd><span class="mono">224,132 mi</span></dd></dl>
+    </div>
+  </section>
+</div>
+
+<!-- ============================================================
+     § 02 — DRIVETRAIN & POWERTRAIN
+============================================================ -->
+<div class="page">
+  <div class="running-head">
+    <div>Yoshi Dossier</div>
+    <div class="center">§ 02 &middot; Drivetrain</div>
+    <div class="right">05</div>
+  </div>
+
+  <section class="section" id="sec-02">
+    <div class="section-head">
+      <div class="section-num">§ 02</div>
+      <div class="section-name">Drivetrain &amp; Powertrain</div>
+      <div class="section-tag">Engine · Trans · Tires</div>
+    </div>
+
+    <div class="prose">
+      <p class="lead">The original 1.9L water-cooled wasserboxer has been replaced with a 2.2L JDM Subaru EJ22 &mdash; a common and well-supported swap for T3 Vanagons. Engine swap performed at EuroPro in Costa Mesa, CA, in July 2014. Transmission and clutch refreshed in late 2021.</p>
+    </div>
+
+    <div class="kv">
+      <dl><dt>Engine</dt><dd>2.2L JDM Subaru EJ22 &middot; flat-four, water-cooled <span class="signal-tag">Swap</span></dd></dl>
+      <dl><dt>Output</dt><dd>~135–142 HP</dd></dl>
+      <dl><dt>Oil</dt><dd>Synthetic 5W-30</dd></dl>
+      <dl><dt>Engine swap</dt><dd>EuroPro, Costa Mesa CA &middot; 18 Jul 2014</dd></dl>
+      <dl><dt>Transmission</dt><dd>Replaced 24 Sep 2021 at North Westy, Seattle WA &middot; clutch, flywheel, pilot &amp; release bearing</dd></dl>
+      <dl><dt>Clutch (prior)</dt><dd>Assembly replaced 1 Sep 2021 at Gomora Auto, Los Angeles CA</dd></dl>
+      <dl><dt>Steering</dt><dd>Rack replaced 2014 (with engine swap) &middot; power steering retained</dd></dl>
+      <dl><dt>Catalytic converter</dt><dd>Replaced 2014 (with engine swap)</dd></dl>
+      <dl><dt>Tires</dt><dd>Vredestein Quatrac &middot; <span class="mono">225/55 R16 99W XL</span> &middot; all-weather &middot; installed Sep 2021</dd></dl>
+      <dl><dt>Starter</dt><dd>Replaced 4 Oct 2021 at Berlin Auto Services, MD</dd></dl>
+    </div>
+  </section>
+</div>
+
+<!-- ============================================================
+     § 03 — ELECTRICAL SYSTEM
+============================================================ -->
+<div class="page">
+  <div class="running-head">
+    <div>Yoshi Dossier</div>
+    <div class="center">§ 03 &middot; Electrical</div>
+    <div class="right">06</div>
+  </div>
+
+  <section class="section" id="sec-03">
+    <div class="section-head">
+      <div class="section-num">§ 03</div>
+      <div class="section-name">Electrical System</div>
+      <div class="section-tag">Starter · House · Solar</div>
+    </div>
+
+    <div class="prose">
+      <p class="lead">Two independent battery systems: an AGM starter battery for the engine, and a 200&nbsp;Ah lithium house bank for everything else. Charged from three sources &mdash; alternator (via DC-DC), shore power (via Blue Smart), and rooftop solar (via MPPT). All Victron components aggregated through the Cerbo GX, which is what YoshiOS pulls telemetry from.</p>
+    </div>
+
+    <!-- ============= FIGURE: ELECTRICAL ONE-LINE ============= -->
+    <div class="figure">
+      <div class="fig-frame">
+        <svg viewBox="0 0 820 380" xmlns="http://www.w3.org/2000/svg">
+          <text x="20" y="22" font-family="DM Mono, monospace" font-size="9" fill="#9A9994" letter-spacing="0.1em">FIG. 03.1</text>
+          <text x="100" y="22" font-family="DM Mono, monospace" font-size="9" fill="#5A5A56" letter-spacing="0.05em">ELECTRICAL ONE-LINE · CHARGE PATHS &amp; LOADS</text>
+
+          <!-- ===== SOURCES (top row) ===== -->
+          <g transform="translate(40, 60)">
+            <rect width="140" height="50" fill="none" stroke="#1A1A1A" stroke-width="0.75"/>
+            <text x="70" y="20" font-family="DM Mono, monospace" font-size="9" fill="#111111" text-anchor="middle" letter-spacing="0.06em">SOLAR PV</text>
+            <text x="70" y="34" font-family="DM Mono, monospace" font-size="7.5" fill="#5A5A56" text-anchor="middle">RENOGY 200W + LEGACY 135W</text>
+            <text x="70" y="44" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">~335W INSTALLED</text>
+          </g>
+          <g transform="translate(220, 60)">
+            <rect width="160" height="50" fill="none" stroke="#1A1A1A" stroke-width="0.75"/>
+            <text x="80" y="20" font-family="DM Mono, monospace" font-size="9" fill="#111111" text-anchor="middle" letter-spacing="0.06em">ALTERNATOR</text>
+            <text x="80" y="34" font-family="DM Mono, monospace" font-size="7.5" fill="#5A5A56" text-anchor="middle">EJ22 ENGINE · 12V DC</text>
+            <text x="80" y="44" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">PRIMARY STARTER CHARGE</text>
+          </g>
+          <g transform="translate(420, 60)">
+            <rect width="140" height="50" fill="none" stroke="#1A1A1A" stroke-width="0.75"/>
+            <text x="70" y="20" font-family="DM Mono, monospace" font-size="9" fill="#111111" text-anchor="middle" letter-spacing="0.06em">SHORE 120V</text>
+            <text x="70" y="34" font-family="DM Mono, monospace" font-size="7.5" fill="#5A5A56" text-anchor="middle">NEMA 5-15 INLET</text>
+            <text x="70" y="44" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">AC FROM CAMPGROUND/HOME</text>
+          </g>
+
+          <!-- ===== CONVERTERS (middle row) ===== -->
+          <g transform="translate(40, 150)">
+            <rect width="140" height="46" fill="#FFEDE6" stroke="#E83A0C" stroke-width="0.75"/>
+            <text x="70" y="18" font-family="DM Mono, monospace" font-size="8.5" fill="#E83A0C" text-anchor="middle" letter-spacing="0.06em">SMARTSOLAR MPPT</text>
+            <text x="70" y="30" font-family="DM Mono, monospace" font-size="8" fill="#111111" text-anchor="middle">100/30 · 12V/24V</text>
+            <text x="70" y="40" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">440W @ 12V · 100V Voc</text>
+          </g>
+          <g transform="translate(220, 150)">
+            <rect width="160" height="46" fill="#FFEDE6" stroke="#E83A0C" stroke-width="0.75"/>
+            <text x="80" y="18" font-family="DM Mono, monospace" font-size="8.5" fill="#E83A0C" text-anchor="middle" letter-spacing="0.06em">ORION-Tr SMART DC-DC</text>
+            <text x="80" y="30" font-family="DM Mono, monospace" font-size="8" fill="#111111" text-anchor="middle">12/12-30A · 360W</text>
+            <text x="80" y="40" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">ALT → HOUSE WHILE DRIVING</text>
+          </g>
+          <g transform="translate(420, 150)">
+            <rect width="140" height="46" fill="#FFEDE6" stroke="#E83A0C" stroke-width="0.75"/>
+            <text x="70" y="18" font-family="DM Mono, monospace" font-size="8.5" fill="#E83A0C" text-anchor="middle" letter-spacing="0.06em">BLUE SMART IP22</text>
+            <text x="70" y="30" font-family="DM Mono, monospace" font-size="8" fill="#111111" text-anchor="middle">12/30 · 120V</text>
+            <text x="70" y="40" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">SHORE → HOUSE</text>
+          </g>
+
+          <!-- ===== CENTER BUSES ===== -->
+          <!-- starter bus -->
+          <line x1="240" y1="120" x2="240" y2="220" stroke="#1A1A1A" stroke-width="0.75"/>
+          <line x1="240" y1="220" x2="700" y2="220" stroke="#1A1A1A" stroke-width="0.75"/>
+          <!-- house bus -->
+          <line x1="110" y1="200" x2="110" y2="250" stroke="#1A1A1A" stroke-width="0.75"/>
+          <line x1="300" y1="200" x2="300" y2="250" stroke="#1A1A1A" stroke-width="0.75"/>
+          <line x1="490" y1="200" x2="490" y2="250" stroke="#1A1A1A" stroke-width="0.75"/>
+          <line x1="80" y1="250" x2="780" y2="250" stroke="#1A1A1A" stroke-width="1.25"/>
+          <text x="780" y="246" font-family="DM Mono, monospace" font-size="7.5" fill="#5A5A56" text-anchor="end">12V HOUSE BUS</text>
+
+          <!-- ===== STARTER BATTERY (right side) ===== -->
+          <g transform="translate(620, 200)">
+            <rect width="160" height="46" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+            <text x="80" y="18" font-family="DM Mono, monospace" font-size="8.5" fill="#111111" text-anchor="middle" letter-spacing="0.06em">STARTER · ODYSSEY AGM</text>
+            <text x="80" y="30" font-family="DM Mono, monospace" font-size="8" fill="#111111" text-anchor="middle">ODP-AGM96R · 600 CCA</text>
+            <text x="80" y="40" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">40 LB · GROUP 96R</text>
+          </g>
+
+          <!-- ===== HOUSE BANK + SHUNT (below house bus) ===== -->
+          <g transform="translate(40, 280)">
+            <rect width="220" height="60" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+            <text x="110" y="20" font-family="DM Mono, monospace" font-size="8.5" fill="#111111" text-anchor="middle" letter-spacing="0.06em">HOUSE · 2× WEIZE LiFePO4</text>
+            <text x="110" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111" text-anchor="middle">12.8V × 100Ah each → 2,560 Wh</text>
+            <text x="110" y="48" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">PARALLEL · ~52.8 LB COMBINED</text>
+          </g>
+
+          <!-- shunt -->
+          <g transform="translate(280, 280)">
+            <rect width="160" height="60" fill="#FFEDE6" stroke="#E83A0C" stroke-width="0.75"/>
+            <text x="80" y="20" font-family="DM Mono, monospace" font-size="8.5" fill="#E83A0C" text-anchor="middle" letter-spacing="0.06em">SMARTSHUNT IP65</text>
+            <text x="80" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111" text-anchor="middle">500A · BLUETOOTH</text>
+            <text x="80" y="48" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">SOC · V · A · TIME-TO-GO</text>
+          </g>
+
+          <!-- inverter + cerbo -->
+          <g transform="translate(460, 280)">
+            <rect width="140" height="60" fill="none" stroke="#1A1A1A" stroke-width="0.75"/>
+            <text x="70" y="20" font-family="DM Mono, monospace" font-size="8.5" fill="#111111" text-anchor="middle" letter-spacing="0.06em">PHOENIX INVERTER</text>
+            <text x="70" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111" text-anchor="middle">12 / 1200 · PURE SINE</text>
+            <text x="70" y="48" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">12V → 120V AC LOADS</text>
+          </g>
+          <g transform="translate(620, 280)">
+            <rect width="160" height="60" fill="#FFEDE6" stroke="#E83A0C" stroke-width="0.75"/>
+            <text x="80" y="20" font-family="DM Mono, monospace" font-size="8.5" fill="#E83A0C" text-anchor="middle" letter-spacing="0.06em">CERBO GX</text>
+            <text x="80" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111" text-anchor="middle">MQTT HUB · ETHERNET</text>
+            <text x="80" y="48" font-family="DM Mono, monospace" font-size="6.5" fill="#9A9994" text-anchor="middle">FEEDS YOSHIOS</text>
+          </g>
+
+          <!-- legend -->
+          <g transform="translate(40, 360)">
+            <rect width="10" height="10" fill="#FFEDE6" stroke="#E83A0C" stroke-width="0.75"/>
+            <text x="16" y="9" font-family="DM Mono, monospace" font-size="8" fill="#5A5A56">VICTRON · CERBO-AGGREGATED</text>
+            <rect x="280" y="0" width="10" height="10" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+            <text x="296" y="9" font-family="DM Mono, monospace" font-size="8" fill="#5A5A56">BATTERY / OTHER COMPONENT</text>
+          </g>
+        </svg>
+      </div>
+      <div class="fig-cap">
+        <span class="label">Fig. 03.1</span>
+        <span>Three sources, two batteries, one bus. Cerbo GX is what YoshiOS pulls telemetry from.</span>
+        <span class="num">01 / 03</span>
+      </div>
+    </div>
+
+    <!-- ============= STARTER ============= -->
+    <div class="sub-head">
+      <div class="sub-num">§ 03.1</div>
+      <div class="sub-name">Starter battery</div>
+    </div>
+    <div class="kv">
+      <dl><dt>Model</dt><dd>Odyssey ODP-AGM96R &middot; Performance Series AGM</dd></dl>
+      <dl><dt>Spec</dt><dd>600 CCA &middot; Group 96R &middot; <span class="mono">9.5&Prime; × 6.9&Prime; × 6.8&Prime;</span> &middot; ~40 lb</dd></dl>
+      <dl><dt>Charge path</dt><dd>Engine alternator only</dd></dl>
+    </div>
+
+    <!-- ============= HOUSE ============= -->
+    <div class="sub-head">
+      <div class="sub-num">§ 03.2</div>
+      <div class="sub-name">House bank</div>
+    </div>
+    <div class="kv">
+      <dl><dt>Configuration</dt><dd>2× WEIZE 12V 100Ah LiFePO4 in parallel &middot; <span class="mono">2,560 Wh</span> nominal</dd></dl>
+      <dl><dt>Per cell</dt><dd>12.8V nominal &middot; 100Ah &middot; 1,280 Wh &middot; 26.4 lb &middot; <span class="mono">13 × 6.77 × 8.46&Prime;</span></dd></dl>
+      <dl><dt>Charge limits</dt><dd>14.4V standard &middot; 20A standard &middot; 100A max &middot; 10V cutoff</dd></dl>
+      <dl><dt>Discharge limits</dt><dd>100A continuous &middot; 200A peak</dd></dl>
+      <dl><dt>Monitoring</dt><dd>Victron SmartShunt IP65 500A &middot; Bluetooth + VE.Direct to Cerbo</dd></dl>
+    </div>
+
+    <!-- ============= CHARGE SOURCES ============= -->
+    <div class="sub-head">
+      <div class="sub-num">§ 03.3</div>
+      <div class="sub-name">Charge sources</div>
+    </div>
+    <div class="kv">
+      <dl><dt>Solar controller</dt><dd>Victron SmartSolar MPPT 100/30 &middot; 440W nominal @ 12V &middot; 100V Voc max &middot; 98% peak efficiency</dd></dl>
+      <dl><dt>Solar panels (installed)</dt><dd>Renogy 200W (19.2V, 10.42A) + legacy 135W (17.7V, 7.63A) &middot; ~335W combined</dd></dl>
+      <dl><dt>DC-DC charger</dt><dd>Victron Orion-Tr Smart 12/12-30A &middot; 360W &middot; alternator → house while driving</dd></dl>
+      <dl><dt>Shore charger</dt><dd>Victron Blue Smart IP22 12/30 &middot; 120V NEMA 5-15 input</dd></dl>
+    </div>
+
+    <div class="stamp-card" data-stamp="Note">
+      <h4>Solar wattage math &mdash; pending field measurement</h4>
+      <p>The two installed panels have different voltages (19.2V Renogy, 17.7V legacy), so the existing series/parallel calculations carried over from prior notes don&rsquo;t resolve cleanly. Real-world output will be limited by whichever panel runs first to its MPP. Worth measuring actual yield through the MPPT&rsquo;s VictronConnect logs over a few sunny days and replacing the theoretical math with measured numbers.</p>
+    </div>
+
+    <!-- ============= LOADS ============= -->
+    <div class="sub-head">
+      <div class="sub-num">§ 03.4</div>
+      <div class="sub-name">Inverter &amp; major loads</div>
+    </div>
+    <div class="kv">
+      <dl><dt>Inverter</dt><dd>Victron Phoenix 12/1200 &middot; pure sine wave &middot; 12V → 120V AC</dd></dl>
+      <dl><dt>Rooftop A/C</dt><dd>VELIT 2000R &middot; 12V/24V &middot; 8,000 BTU &middot; 20–60A draw at 12V <span class="signal-tag">As-installed</span></dd></dl>
+      <dl><dt>A/C refrigerant</dt><dd>R134a (as-installed unit) &middot; current production VELIT 2000R ships with R32</dd></dl>
+      <dl><dt>YoshiOS compute</dt><dd>Kingdel mini-PC &middot; 12V direct via barrel jack &middot; no inverter required</dd></dl>
+    </div>
+  </section>
+</div>
+
+<!-- ============================================================
+     § 04 — BENCH & BED ASSEMBLY
+============================================================ -->
+<div class="page">
+  <div class="running-head">
+    <div>Yoshi Dossier</div>
+    <div class="center">§ 04 &middot; Bench &amp; Bed</div>
+    <div class="right">09</div>
+  </div>
+
+  <section class="section" id="sec-04">
+    <div class="section-head">
+      <div class="section-num">§ 04</div>
+      <div class="section-name">Bench &amp; Bed Assembly</div>
+      <div class="section-tag">Stream A · Interior</div>
+    </div>
+
+    <div class="prose">
+      <p class="lead">A custom rear bench built by Matt sits over the house battery bank. The seat lid slides forward on drawer sliders; the back panel folds flat onto a fixed platform behind, joining mattress panels to form a continuous 74&Prime; sleeping surface.</p>
+      <p>The structural geometry is settled. Open work: foam, batting, channel-pleated upholstery in white furniture fabric, and a moisture-management strategy appropriate to van conditions.</p>
+    </div>
+
+    <!-- ============= FIGURE A — bench in three positions ============= -->
+    <div class="figure">
+      <div class="fig-frame">
+        <svg viewBox="0 0 820 380" xmlns="http://www.w3.org/2000/svg">
+          <!-- Title row -->
+          <text x="20" y="22" font-family="DM Mono, monospace" font-size="9" fill="#9A9994" letter-spacing="0.1em">FIG. A</text>
+          <text x="80" y="22" font-family="DM Mono, monospace" font-size="9" fill="#5A5A56" letter-spacing="0.05em">BENCH ASSEMBLY · SIDE VIEW · THREE STATES</text>
+
+          <!-- ======= STATE 1: SEATED ======= -->
+          <g transform="translate(20, 60)">
+            <text x="0" y="-6" font-family="DM Mono, monospace" font-size="9" fill="#E83A0C" letter-spacing="0.08em">① SEATED</text>
+            <!-- van wall -->
+            <line x1="2" y1="0" x2="2" y2="200" stroke="#C8C7C2" stroke-width="1"/>
+            <!-- platform (fixed) -->
+            <rect x="2" y="170" width="155" height="32" fill="none" stroke="#5A5A56" stroke-width="0.75"/>
+            <text x="79" y="190" font-family="DM Mono, monospace" font-size="7" fill="#9A9994" text-anchor="middle">PLATFORM (FIXED)</text>
+            <!-- bench box (fixed) -->
+            <rect x="157" y="100" width="80" height="102" fill="#FAFAFA" stroke="#5A5A56" stroke-width="0.75"/>
+            <text x="197" y="148" font-family="DM Mono, monospace" font-size="7" fill="#9A9994" text-anchor="middle">BENCH BOX</text>
+            <text x="197" y="159" font-family="DM Mono, monospace" font-size="6.5" fill="#C8C7C2" text-anchor="middle">(BATTERIES INSIDE)</text>
+            <!-- seat lid -->
+            <rect x="157" y="86" width="80" height="14" fill="#F0E8D0" stroke="#C48A2A" stroke-width="0.6"/>
+            <!-- seat cushion -->
+            <rect x="157" y="68" width="80" height="18" fill="none" stroke="#E83A0C" stroke-width="0.9"/>
+            <!-- back cushion (vertical) -->
+            <rect x="157" y="0" width="14" height="68" fill="none" stroke="#E83A0C" stroke-width="0.9"/>
+            <!-- back panel (vertical, behind cushion) -->
+            <line x1="171" y1="0" x2="171" y2="68" stroke="#5A5A56" stroke-width="0.6"/>
+            <!-- floor -->
+            <line x1="0" y1="220" x2="245" y2="220" stroke="#1A1A1A" stroke-width="0.5"/>
+            <!-- dim -->
+            <text x="125" y="238" font-family="DM Mono, monospace" font-size="7" fill="#5A5A56" text-anchor="middle">SEAT 18&Prime; · BACK 16&Prime;</text>
+          </g>
+
+          <!-- ======= STATE 2: LID SLIDES ======= -->
+          <g transform="translate(290, 60)">
+            <text x="0" y="-6" font-family="DM Mono, monospace" font-size="9" fill="#E83A0C" letter-spacing="0.08em">② LID SLIDES FWD</text>
+            <line x1="2" y1="0" x2="2" y2="200" stroke="#C8C7C2" stroke-width="1"/>
+            <rect x="2" y="170" width="155" height="32" fill="none" stroke="#5A5A56" stroke-width="0.75"/>
+            <rect x="157" y="100" width="80" height="102" fill="#FAFAFA" stroke="#5A5A56" stroke-width="0.75"/>
+            <!-- drawer slides hint -->
+            <line x1="157" y1="105" x2="237" y2="105" stroke="#C8C7C2" stroke-width="0.5" stroke-dasharray="2,2"/>
+            <!-- seat lid SLID FORWARD by ~36px (representing 18") -->
+            <rect x="193" y="86" width="80" height="14" fill="#F0E8D0" stroke="#C48A2A" stroke-width="0.6"/>
+            <rect x="193" y="68" width="80" height="18" fill="none" stroke="#E83A0C" stroke-width="0.9"/>
+            <!-- arrow indicating slide -->
+            <line x1="160" y1="93" x2="190" y2="93" stroke="#E83A0C" stroke-width="0.75" marker-end="url(#arrowR)"/>
+            <!-- back still vertical -->
+            <rect x="157" y="0" width="14" height="68" fill="none" stroke="#E83A0C" stroke-width="0.9"/>
+            <line x1="171" y1="0" x2="171" y2="68" stroke="#5A5A56" stroke-width="0.6"/>
+            <line x1="0" y1="220" x2="285" y2="220" stroke="#1A1A1A" stroke-width="0.5"/>
+            <text x="135" y="238" font-family="DM Mono, monospace" font-size="7" fill="#5A5A56" text-anchor="middle">CUSHION TRAVELS WITH LID</text>
+          </g>
+
+          <!-- ======= STATE 3: FOLDED FLAT ======= -->
+          <g transform="translate(560, 60)">
+            <text x="0" y="-6" font-family="DM Mono, monospace" font-size="9" fill="#E83A0C" letter-spacing="0.08em">③ BACK FOLDS FLAT</text>
+            <line x1="2" y1="0" x2="2" y2="200" stroke="#C8C7C2" stroke-width="1"/>
+            <rect x="2" y="170" width="155" height="32" fill="none" stroke="#5A5A56" stroke-width="0.75"/>
+            <rect x="157" y="100" width="80" height="102" fill="#FAFAFA" stroke="#5A5A56" stroke-width="0.75"/>
+            <!-- seat lid still slid forward -->
+            <rect x="193" y="86" width="80" height="14" fill="#F0E8D0" stroke="#C48A2A" stroke-width="0.6"/>
+            <!-- seat cushion top -->
+            <rect x="193" y="68" width="80" height="18" fill="none" stroke="#E83A0C" stroke-width="0.9"/>
+            <!-- back FOLDED flat onto platform — now horizontal -->
+            <rect x="89" y="86" width="68" height="14" fill="#F0E8D0" stroke="#C48A2A" stroke-width="0.6"/>
+            <rect x="89" y="68" width="68" height="18" fill="none" stroke="#E83A0C" stroke-width="0.9"/>
+            <!-- mattress panel filling rest of platform -->
+            <rect x="2" y="86" width="87" height="14" fill="none" stroke="#C8C7C2" stroke-width="0.6" stroke-dasharray="3,2"/>
+            <rect x="2" y="68" width="87" height="18" fill="none" stroke="#C8C7C2" stroke-width="0.7" stroke-dasharray="3,2"/>
+            <!-- arc arrow showing fold -->
+            <path d="M 165,15 Q 145,40 105,80" fill="none" stroke="#E83A0C" stroke-width="0.75" stroke-dasharray="2,2" marker-end="url(#arrowR)"/>
+            <!-- continuous surface line -->
+            <line x1="2" y1="68" x2="273" y2="68" stroke="#E83A0C" stroke-width="0.4" stroke-dasharray="1,2"/>
+            <line x1="0" y1="220" x2="285" y2="220" stroke="#1A1A1A" stroke-width="0.5"/>
+            <text x="135" y="238" font-family="DM Mono, monospace" font-size="7" fill="#5A5A56" text-anchor="middle">74&Prime; CONTINUOUS SURFACE</text>
+          </g>
+
+          <!-- arrow marker -->
+          <defs>
+            <marker id="arrowR" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 z" fill="#E83A0C"/>
+            </marker>
+          </defs>
+
+          <!-- bottom legend -->
+          <g transform="translate(20, 340)">
+            <rect x="0" y="0" width="10" height="10" fill="none" stroke="#5A5A56" stroke-width="0.6"/>
+            <text x="16" y="8" font-family="DM Mono, monospace" font-size="8" fill="#5A5A56">FIXED STRUCTURE</text>
+            <rect x="160" y="0" width="10" height="10" fill="#F0E8D0" stroke="#C48A2A" stroke-width="0.6"/>
+            <text x="176" y="8" font-family="DM Mono, monospace" font-size="8" fill="#5A5A56">SLIDING / FOLDING PANEL</text>
+            <rect x="350" y="0" width="10" height="10" fill="none" stroke="#E83A0C" stroke-width="0.9"/>
+            <text x="366" y="8" font-family="DM Mono, monospace" font-size="8" fill="#5A5A56">FOAM CUSHION</text>
+            <rect x="490" y="0" width="10" height="10" fill="none" stroke="#C8C7C2" stroke-width="0.7" stroke-dasharray="2,1.5"/>
+            <text x="506" y="8" font-family="DM Mono, monospace" font-size="8" fill="#5A5A56">MATTRESS PANEL (FUTURE)</text>
+          </g>
+        </svg>
+      </div>
+      <div class="fig-cap">
+        <span class="label">Fig. A</span>
+        <span>Bench seat to bed conversion. Structure stays put; only the lid slides forward and the back folds flat onto the platform.</span>
+        <span class="num">02 / 06</span>
+      </div>
+    </div>
+
+    <!-- ============= SUB: FOAM SPEC ============= -->
+    <div class="sub-head">
+      <div class="sub-num">§ 04.1</div>
+      <div class="sub-name">Foam &amp; cushion stack</div>
+    </div>
+    <div class="prose">
+      <p>Single-density foam is always a compromise &mdash; firm enough to sit on bottoms out your hips when sleeping; soft enough to sleep on sinks when you sit. The spec is dual-layer throughout: a firm base layer carries body weight; a softer comfort layer goes on top. Both seat panels use a 2&Prime;&thinsp;+&thinsp;1&Prime; stack; the mattress panel uses a thicker 3&Prime;&thinsp;+&thinsp;1&Prime; stack so the bulk of your sleeping weight lands on the deepest foam.</p>
+      <p>Two numbers define each foam layer and are the only specs that matter when shopping across vendors. <strong>PCF</strong> (pounds per cubic foot) is density &mdash; how durable and long-lasting the foam is. Higher PCF resists body impressions. <strong>ILD</strong> (indentation load deflection) is firmness &mdash; how many pounds of force it takes to compress a 4&Prime; sample by 25%. Higher ILD = firmer. Ask any supplier for &ldquo;1.8 PCF, 36 ILD polyurethane&rdquo; and they&rsquo;ll know exactly what you mean regardless of what they call it on the shelf.</p>
+    </div>
+
+    <div class="kv">
+      <dl><dt>Base layer</dt><dd>High-density polyurethane &middot; 1.8 PCF &middot; 36 ILD (firm, structural)</dd></dl>
+      <dl><dt>Comfort layer</dt><dd>High-density polyurethane &middot; 2.0 PCF &middot; 28 ILD (softer, body-contouring)</dd></dl>
+      <dl><dt>Seat bottom</dt><dd>2&Prime; base + 1&Prime; comfort (3&Prime; total)</dd></dl>
+      <dl><dt>Seat back</dt><dd>2&Prime; base + 1&Prime; comfort (3&Prime; total)</dd></dl>
+      <dl><dt>Mattress panel</dt><dd>3&Prime; base + 1&Prime; comfort (4&Prime; total)</dd></dl>
+      <dl><dt>Lamination</dt><dd>3M Foam Fast 74 spray adhesive between layers</dd></dl>
+      <dl><dt>Anti-slip</dt><dd>HyperVent condensation mat under foam &middot; alignment cleats on plywood</dd></dl>
+    </div>
+
+    <!-- ============= SUB: UPHOLSTERY ============= -->
+    <div class="sub-head">
+      <div class="sub-num">§ 04.2</div>
+      <div class="sub-name">Upholstery &amp; moisture stack</div>
+    </div>
+    <div class="prose">
+      <p>The fabric on hand &mdash; soft white furniture cloth, blanket-weight &mdash; needs reinforcement and moisture protection before it sees van conditions. The construction is a five-layer stack from outside to inside: <strong>fabric &middot; BellBloc 68 liner &middot; batting &middot; sew foam &middot; main foam.</strong> BellBloc handles moisture, mold, and mildew; it also stiffens the fabric enough that separate iron-on interfacing isn&rsquo;t needed. Channel pleating runs front-to-back at 5&Prime; intervals: nine channels with 3&Prime; flat margins on each side, sewn through fabric + BellBloc + sew foam.</p>
+    </div>
+
+    <div class="stamp-card" data-stamp="Standing Spec">
+      <h4>Channel layout &mdash; 48&Prime; bench width</h4>
+      <p>3&Prime; flat margin &middot; nine channels at 5&Prime; on-center &middot; 3&Prime; flat margin. Stitched front-to-back through fabric, BellBloc 68 liner, and sew foam. Same channel pattern on seat, back, and future mattress panels for continuity.</p>
+    </div>
+  </section>
+</div>
+
+<!-- ============================================================
+     § 05 — YOSHIOS
+============================================================ -->
+<div class="page">
+  <div class="running-head">
+    <div>Yoshi Dossier</div>
+    <div class="center">§ 05 &middot; YoshiOS</div>
+    <div class="right">12</div>
+  </div>
+
+  <section class="section" id="sec-05">
+    <div class="section-head">
+      <div class="section-num">§ 05</div>
+      <div class="section-name">YoshiOS</div>
+      <div class="section-tag">Stream B · Compute</div>
+    </div>
+
+    <div class="prose">
+      <p class="lead">A custom onboard computer system for Yoshi, rendered through an amber monochrome CRT salvaged from a 1986 Magnavox Videowriter 350. The architecture binds vehicle telemetry, navigation, audio routing, and IMU orientation data into a single 1-bit amber dashboard.</p>
+      <p>The runtime is Electron on a fanless industrial mini-PC, drawing live Victron data over MQTT through the Cerbo GX hub. Currently running on simulated data; the simulator transparently swaps to live feeds when the Cerbo IP and Portal ID are populated in <code>main.js</code>.</p>
+    </div>
+
+    <!-- ============ FIGURE B — System architecture ============ -->
+    <div class="figure">
+      <div class="fig-frame">
+        <svg viewBox="0 0 820 360" xmlns="http://www.w3.org/2000/svg">
+          <text x="20" y="22" font-family="DM Mono, monospace" font-size="9" fill="#9A9994" letter-spacing="0.1em">FIG. B</text>
+          <text x="80" y="22" font-family="DM Mono, monospace" font-size="9" fill="#5A5A56" letter-spacing="0.05em">YOSHIOS · SYSTEM ARCHITECTURE</text>
+
+          <!-- KINGDEL PC (center) -->
+          <g transform="translate(330, 130)">
+            <rect x="0" y="0" width="160" height="80" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1"/>
+            <text x="80" y="22" font-family="DM Sans" font-size="11" fill="#111111" text-anchor="middle" font-weight="600">KINGDEL HCTK090V</text>
+            <text x="80" y="38" font-family="DM Mono, monospace" font-size="8" fill="#5A5A56" text-anchor="middle">i5-3317U · 8GB · WIN 11</text>
+            <text x="80" y="54" font-family="DM Mono, monospace" font-size="8" fill="#5A5A56" text-anchor="middle">FANLESS · 12V DIRECT</text>
+            <text x="80" y="70" font-family="DM Mono, monospace" font-size="8.5" fill="#E83A0C" text-anchor="middle" letter-spacing="0.06em">ELECTRON · REACT · SVG</text>
+          </g>
+
+          <!-- VICTRON / CERBO (left) -->
+          <g transform="translate(40, 90)">
+            <rect x="0" y="0" width="170" height="160" fill="none" stroke="#5A5A56" stroke-width="0.75"/>
+            <text x="85" y="18" font-family="DM Mono, monospace" font-size="9" fill="#5A5A56" text-anchor="middle" letter-spacing="0.06em">VICTRON STACK</text>
+            <line x1="14" y1="26" x2="156" y2="26" stroke="#E6E5E1"/>
+
+            <!-- list -->
+            <text x="14" y="44" font-family="DM Mono, monospace" font-size="8" fill="#111111">SmartShunt</text>
+            <text x="14" y="58" font-family="DM Mono, monospace" font-size="8" fill="#111111">MPPT 100|30</text>
+            <text x="14" y="72" font-family="DM Mono, monospace" font-size="8" fill="#111111">Phoenix 12|1200</text>
+            <text x="14" y="86" font-family="DM Mono, monospace" font-size="8" fill="#111111">Orion-Tr 12|12-30</text>
+            <text x="14" y="100" font-family="DM Mono, monospace" font-size="8" fill="#111111">Blue Smart Charger</text>
+            <text x="14" y="114" font-family="DM Mono, monospace" font-size="8" fill="#111111">Lithium bank</text>
+
+            <line x1="14" y1="124" x2="156" y2="124" stroke="#E6E5E1"/>
+            <rect x="14" y="132" width="142" height="18" fill="#FFEDE6" stroke="#E83A0C" stroke-width="0.6"/>
+            <text x="85" y="144" font-family="DM Mono, monospace" font-size="8" fill="#E83A0C" text-anchor="middle" letter-spacing="0.06em">CERBO GX · MQTT HUB</text>
+          </g>
+
+          <!-- IMU (right top) -->
+          <g transform="translate(610, 90)">
+            <rect x="0" y="0" width="170" height="60" fill="none" stroke="#5A5A56" stroke-width="0.75"/>
+            <text x="85" y="18" font-family="DM Mono, monospace" font-size="9" fill="#5A5A56" text-anchor="middle" letter-spacing="0.06em">IMU</text>
+            <line x1="14" y1="26" x2="156" y2="26" stroke="#E6E5E1"/>
+            <text x="85" y="42" font-family="DM Sans" font-size="10" fill="#111111" text-anchor="middle" font-weight="500">WitMotion WT901BLECL</text>
+            <text x="85" y="54" font-family="DM Mono, monospace" font-size="7.5" fill="#9A9994" text-anchor="middle">9-AXIS · BLE 5.0 · PITCH/ROLL/HEADING</text>
+          </g>
+
+          <!-- DISPLAY (right bottom) -->
+          <g transform="translate(610, 170)">
+            <rect x="0" y="0" width="170" height="80" fill="none" stroke="#5A5A56" stroke-width="0.75"/>
+            <text x="85" y="18" font-family="DM Mono, monospace" font-size="9" fill="#5A5A56" text-anchor="middle" letter-spacing="0.06em">DISPLAY</text>
+            <line x1="14" y1="26" x2="156" y2="26" stroke="#E6E5E1"/>
+            <text x="85" y="42" font-family="DM Sans" font-size="10" fill="#111111" text-anchor="middle" font-weight="500">9&Prime; IPS · 1024×600</text>
+            <text x="85" y="54" font-family="DM Mono, monospace" font-size="7.5" fill="#9A9994" text-anchor="middle">PHA090-C16-V02 (DEV)</text>
+            <line x1="40" y1="60" x2="130" y2="60" stroke="#E6E5E1" stroke-dasharray="2,2"/>
+            <text x="85" y="74" font-family="DM Mono, monospace" font-size="8" fill="#E83A0C" text-anchor="middle" letter-spacing="0.06em">→ AMBER CRT (FUTURE)</text>
+          </g>
+
+          <!-- Connections -->
+          <line x1="210" y1="170" x2="330" y2="170" stroke="#1A1A1A" stroke-width="1"/>
+          <text x="270" y="164" font-family="DM Mono, monospace" font-size="7.5" fill="#5A5A56" text-anchor="middle" letter-spacing="0.06em">ETHERNET · MQTT</text>
+          <text x="270" y="180" font-family="DM Mono, monospace" font-size="7" fill="#9A9994" text-anchor="middle">N/&lt;portal_id&gt;/...</text>
+
+          <line x1="490" y1="155" x2="610" y2="120" stroke="#1A1A1A" stroke-width="1"/>
+          <text x="550" y="130" font-family="DM Mono, monospace" font-size="7.5" fill="#5A5A56" text-anchor="middle" letter-spacing="0.06em">BLUETOOTH</text>
+
+          <line x1="490" y1="185" x2="610" y2="210" stroke="#1A1A1A" stroke-width="1"/>
+          <text x="550" y="205" font-family="DM Mono, monospace" font-size="7.5" fill="#5A5A56" text-anchor="middle" letter-spacing="0.06em">HDMI</text>
+
+          <!-- bottom band: signals coming in -->
+          <g transform="translate(40, 290)">
+            <rect x="0" y="0" width="740" height="50" fill="#FCFCFA" stroke="#E6E5E1" stroke-width="0.5"/>
+            <text x="14" y="16" font-family="DM Mono, monospace" font-size="8" fill="#9A9994" letter-spacing="0.1em">DATA STREAMS</text>
+            <text x="14" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111">SOC · V · A · W</text>
+            <text x="120" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111">PV YIELD</text>
+            <text x="200" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111">PITCH/ROLL</text>
+            <text x="290" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111">HEADING</text>
+            <text x="370" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111">SPOTIFY</text>
+            <text x="440" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111">VOLUME</text>
+            <text x="520" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111">GPS (FUTURE)</text>
+            <text x="630" y="34" font-family="DM Mono, monospace" font-size="8" fill="#111111">SENSORS (FUTURE)</text>
+            <text x="14" y="46" font-family="DM Mono, monospace" font-size="7" fill="#9A9994">TIER-1 GLANCE: SOC % · SOLAR % · HEADING · AMBIENT TEMP · CURRENT TRACK</text>
+          </g>
+        </svg>
+      </div>
+      <div class="fig-cap">
+        <span class="label">Fig. B</span>
+        <span>System architecture. Cerbo GX collapses the entire Victron stack into a single MQTT feed over Ethernet.</span>
+        <span class="num">03 / 06</span>
+      </div>
+    </div>
+
+    <!-- ============= HARDWARE TABLE ============= -->
+    <div class="sub-head">
+      <div class="sub-num">§ 05.1</div>
+      <div class="sub-name">Hardware spine</div>
+    </div>
+    <div class="kv">
+      <dl><dt>Compositor</dt><dd>Kingdel HCTK090V.CA &middot; Intel i5-3317U @ 1.70 GHz &middot; 8 GB &middot; Win 11 Pro &middot; fanless aluminum</dd></dl>
+      <dl><dt>Target display</dt><dd>10&Prime; amber CRT, P3 phosphor &middot; ex-Magnavox Videowriter 350 (1986)</dd></dl>
+      <dl><dt>Target res</dt><dd><span class="mono">832 × 300 · 1-bit · 60 Hz</span> &middot; driven via RP2040 (planned)</dd></dl>
+      <dl><dt>Dev display</dt><dd>PHA090-C16-V02 &middot; 9&Prime; IPS &middot; 1024 × 600 &middot; HDMI</dd></dl>
+      <dl><dt>IMU</dt><dd>WitMotion WT901BLECL &middot; 9-axis &middot; Bluetooth 5.0 BLE</dd></dl>
+      <dl><dt>Telemetry</dt><dd>Cerbo GX → MQTT over Ethernet &middot; collapses Victron stack to single feed</dd></dl>
+      <dl><dt>Audio</dt><dd>Spotify Connect / AirPlay via phone hotspot &middot; Kicker KEY 200.4 amplifier</dd></dl>
+    </div>
+
+    <!-- ============= FIGURE C — UI illustrations from Julia's SVGs ============= -->
+    <div class="sub-head">
+      <div class="sub-num">§ 05.2</div>
+      <div class="sub-name">Visual system</div>
+    </div>
+    <div class="prose">
+      <p>The dashboard renders Julia&rsquo;s custom Vanagon line drawings &mdash; rear and side &mdash; tilting in real-time with IMU data. Stroke weight 0.8, drawn in <code>AMBER_MID</code>. The four-tier amber color hierarchy is brighter for higher-priority data; nothing ever goes darker than <code>AMBER_DIM</code>.</p>
+    </div>
+
+    <div class="figure">
+      <div class="fig-frame" style="background: #1C1A0E; padding: 32px;">
+        <svg viewBox="0 0 820 280" xmlns="http://www.w3.org/2000/svg">
+          <!-- left: rear view -->
+          <g transform="translate(70, 30)">
+            <text x="0" y="0" font-family="DM Mono, monospace" font-size="9" fill="#6B5510" letter-spacing="0.1em">REAR VIEW · COMPASS / HEADING</text>
+            <g transform="translate(0, 16) scale(0.34)" stroke="#f0ad3b" stroke-width="2" fill="none" stroke-miterlimit="10">
+              <path d="M81.3,18.1h43.7l5.5,5.1h105.5v-5.1h18.3v5.1h148l3-5.1h114.6l23.4,20v4l54.9,69.2h7.5l20.2,23.7-2.6,45.8h-18.5c-3.2,0-6.2,1.7-7.7,4.5l-8.3,14.9h30.3l-.6,4.9h14v12s-.6,4.6-2.9,5.7-32.6,6.3-32.6,6.3h-8l.3-4.9-60.3,8.3-17.1-36.1c-2.6-5.6-8.2-9.1-14.4-9.1h-35.1c-2,0-11.7,2-14.9,4.9-10.8,9.7-17.2,23.3-18.2,37.7l-.6,8.9h-228.4l-5.4-22.8c-2.5-10.3-8.6-19.5-17.3-25.5-2.8-1.9-10-3.2-11.8-3.2h-38.5c-2.1,0-5.3,1-8.6,2.4-7.7,3.4-13.5,10-16,18.1l-5,16.9h-46.3v1.7H18.6v-18.9h20l-11.7-63.8h1.7v-10.9h-2.3v-1.7L81.3,18.1Z"/>
+              <line x1="543.3" y1="42.2" x2="70.1" y2="42.2"/>
+              <path d="M477,192c-24.3,0-44,19.7-44,44s19.7,44,44,44,44-19.7,44-44-19.7-44-44-44h0ZM477,262.9c-14.8,0-26.9-12-26.9-26.9s12-26.9,26.9-26.9,26.9,12,26.9,26.9-12,26.9-26.9,26.9Z"/>
+              <path d="M147,192c-24.3,0-44,19.7-44,44s19.7,44,44,44,44-19.7,44-44-19.7-44-44-44h0ZM147,262.9c-14.8,0-26.9-12-26.9-26.9s12-26.9,26.9-26.9,26.9,12,26.9,26.9-12,26.9-26.9,26.9Z"/>
+              <polyline points="241.1 42.2 241.1 234.9 407.5 234.9 407.5 42.2"/>
+              <rect x="249.9" y="53" width="146.4" height="55.5" rx="9.3" ry="9.3"/>
+              <path d="M228,108.5h-118.7c-3.7,0-6.4-3.6-5.3-7.1l10.9-44.4c.7-2.3,2.8-3.9,5.3-3.9h107.8c2.9,0,5.3,2.4,5.3,5.3v44.8c0,2.9-2.4,5.3-5.3,5.3h0Z"/>
+              <path d="M562.3,108.5h-130.9c-2.9,0-5.3-2.4-5.3-5.3v-44.8c0-2.9,2.4-5.3,5.3-5.3h93.7c2.1,0,4.1,1,5.3,2.8l34.6,47.6c1.5,2.2,0,5.1-2.7,5.1h0Z"/>
+              <line x1="105" y1="200.1" x2="37.5" y2="200.1"/>
+              <line x1="619.6" y1="200.1" x2="519" y2="200.1"/>
+              <line x1="440.1" y1="200.1" x2="187.9" y2="200"/>
+              <line x1="581.3" y1="133.4" x2="28.9" y2="133.3"/>
+              <line x1="581.3" y1="144.2" x2="26.6" y2="144.2"/>
+              <rect x="81.3" y="7.3" width="207" height="8"/>
+              <path d="M399.2,23.3h-107.5V1h85.2c12.3,0,22.3,10,22.3,22.3h0Z"/>
+            </g>
+            <!-- compass overlay -->
+            <text x="115" y="100" font-family="DM Mono, monospace" font-size="9" fill="#f0ad3b" text-anchor="middle" letter-spacing="0.1em">N</text>
+            <text x="115" y="120" font-family="DM Mono, monospace" font-size="14" fill="#ffd978" text-anchor="middle" font-weight="500">347°</text>
+            <text x="115" y="135" font-family="DM Mono, monospace" font-size="7" fill="#6B5510" text-anchor="middle">ROLL +2.1°</text>
+          </g>
+
+          <!-- right: side view -->
+          <g transform="translate(490, 20)">
+            <text x="0" y="0" font-family="DM Mono, monospace" font-size="9" fill="#6B5510" letter-spacing="0.1em">SIDE VIEW · AMBIENT / PITCH</text>
+            <g transform="translate(0, 14) scale(0.62)" stroke="#f0ad3b" stroke-width="1.6" fill="none" stroke-miterlimit="10">
+              <rect x="21.8" y="180.6" width="44" height="16.6"/>
+              <path d="M45.2,230.9v46.9c0,1.6-1.3,2.9-2.9,2.9h-20c-1.6,0-2.9-1.3-2.9-2.9v-49.2"/>
+              <path d="M225.4,230.9v46.9c0,1.6,1.3,2.9,2.9,2.9h20c1.6,0,2.9-1.3,2.9-2.9v-49.2"/>
+              <rect x="113.3" y="180.6" width="44" height="21.2"/>
+              <rect x="204.8" y="180.6" width="44" height="16.6"/>
+              <path d="M224.7,117.7H45.9c-2.7,0-4.8-2.5-4.3-5.2l10.9-55.3c.4-2.1,2.2-3.6,4.3-3.6h156.9c2.1,0,3.9,1.5,4.3,3.6l10.9,55.3c.5,2.7-1.6,5.2-4.3,5.2h0Z"/>
+              <path d="M135.9,39.3c-18,0-63.2,0-79.2,1.7-16,1.7-17.7,10.3-18.9,13.1s-20.6,76.6-20.6,76.6l1.1,4v10.9l-2.3,2.3v32.6s-1.7,7.4-1.7,12,2.9,16.6,2.9,16.6l-2.3,1.7v11.4s.6,6.3,5.2,6.3h10l42.1,6.3h63.5"/>
+              <path d="M135.3,39.3c18,0,63.2,0,79.2,1.7,16,1.7,17.7,10.3,18.9,13.1,1.1,2.9,20.6,76.6,20.6,76.6l-1.1,4v10.9l2.3,2.3v32.6s1.7,7.4,1.7,12-2.9,16.6-2.9,16.6l2.3,1.7v11.4s-.6,6.3-5.1,6.3h-9.9l-42.1,6.3h-63.5"/>
+              <line x1="17.2" y1="209.1" x2="254" y2="209.1"/>
+              <line x1="18.4" y1="134.8" x2="252.8" y2="134.8"/>
+              <line x1="252.8" y1="145.7" x2="18.4" y2="145.7"/>
+              <path d="M135.6,205.7H21.2l.6-60.6v-10.9l24-85.2s2.3-5.2,6.1-7.2"/>
+              <path d="M135,205.7h114.4l-.6-60.6v-10.9l-24-85.2s-2.3-5.2-6.1-7.2"/>
+              <line x1="21.8" y1="180.6" x2="249.4" y2="180.6"/>
+              <line x1="25.2" y1="173.7" x2="245.9" y2="173.7"/>
+              <line x1="25.2" y1="228.6" x2="245.9" y2="228.6"/>
+              <line x1="21.8" y1="201.7" x2="249.4" y2="201.7"/>
+              <line x1="25.2" y1="168" x2="245.9" y2="168"/>
+              <polyline points="135.6 19.9 48.7 19.9 41.6 47.1"/>
+              <polyline points="135.6 19.9 222.5 19.9 229.6 47.1"/>
+              <rect x="47.5" y="9" width="175" height="8"/>
+              <path d="M182.5,9h-94.9v-1.3c0-3.7,3-6.7,6.7-6.7h81.6c3.7,0,6.6,3,6.6,6.7v1.3Z"/>
+            </g>
+            <!-- ambient overlay -->
+            <text x="200" y="100" font-family="DM Mono, monospace" font-size="9" fill="#f0ad3b" letter-spacing="0.1em">AMBIENT</text>
+            <text x="200" y="122" font-family="DM Mono, monospace" font-size="18" fill="#ffd978" font-weight="500">72°F</text>
+            <text x="200" y="138" font-family="DM Mono, monospace" font-size="7" fill="#6B5510">PITCH −1.4°</text>
+          </g>
+
+          <!-- color hierarchy strip at bottom -->
+          <g transform="translate(70, 240)">
+            <text x="0" y="0" font-family="DM Mono, monospace" font-size="8" fill="#6B5510" letter-spacing="0.1em">AMBER HIERARCHY · BRIGHTER = MORE IMPORTANT</text>
+            <rect x="0" y="10" width="80" height="20" fill="#ffd978"/>
+            <text x="40" y="24" font-family="DM Mono, monospace" font-size="8" fill="#1C1A0E" text-anchor="middle">AMBER_HI</text>
+            <rect x="84" y="10" width="80" height="20" fill="#f0ad3b"/>
+            <text x="124" y="24" font-family="DM Mono, monospace" font-size="8" fill="#1C1A0E" text-anchor="middle">AMBER</text>
+            <rect x="168" y="10" width="80" height="20" fill="#c48a2a"/>
+            <text x="208" y="24" font-family="DM Mono, monospace" font-size="8" fill="#1C1A0E" text-anchor="middle">AMBER_MID</text>
+            <rect x="252" y="10" width="80" height="20" fill="#6B5510"/>
+            <text x="292" y="24" font-family="DM Mono, monospace" font-size="8" fill="#ffd978" text-anchor="middle">AMBER_DIM</text>
+            <rect x="336" y="10" width="80" height="20" fill="#3a3328"/>
+            <text x="376" y="24" font-family="DM Mono, monospace" font-size="8" fill="#ffd978" text-anchor="middle">BG_FILL</text>
+            <rect x="420" y="10" width="80" height="20" fill="#1C1A0E"/>
+            <text x="460" y="24" font-family="DM Mono, monospace" font-size="8" fill="#ffd978" text-anchor="middle">BG</text>
+          </g>
+        </svg>
+      </div>
+      <div class="fig-cap">
+        <span class="label">Fig. C</span>
+        <span>Van illustrations from Julia&rsquo;s Illustrator source. Both tilt with live IMU data. Color hierarchy: brighter = more important.</span>
+        <span class="num">04 / 06</span>
+      </div>
+    </div>
+
+    <!-- ============= STATUS ============= -->
+    <div class="sub-head">
+      <div class="sub-num">§ 05.3</div>
+      <div class="sub-name">State of the build</div>
+    </div>
+    <ul class="status-list">
+      <li><span class="mark done">✓</span><span>Hardware identified and confirmed (Kingdel, display, Cerbo, IMU)</span></li>
+      <li><span class="mark done">✓</span><span>Kingdel set up &mdash; Node.js, Electron, VS Code, Claude Desktop, GitHub repo</span></li>
+      <li><span class="mark done">✓</span><span>Full interactive prototype: boot screen, dashboard, map, music</span></li>
+      <li><span class="mark done">✓</span><span>Geist type system &middot; 4-tier amber palette &middot; van illustrations with tilt</span></li>
+      <li><span class="mark done">✓</span><span>MQTT client wired in &mdash; awaiting Cerbo IP &amp; Portal ID</span></li>
+      <li><span class="mark next">→</span><span><strong>Next:</strong> Cerbo GX connection &mdash; one Ethernet cable + two config values = live telemetry</span></li>
+      <li><span class="mark">○</span><span>BIOS auto-power-on &middot; Windows auto-login (registry fix)</span></li>
+      <li><span class="mark">○</span><span>WitMotion IMU integration → live pitch / roll / heading</span></li>
+      <li><span class="mark">○</span><span>Spotify API &middot; MapLibre amber wireframe map</span></li>
+      <li><span class="mark">○</span><span>Teensy 4.1 physical controls &middot; RP2040 1-bit CRT pipeline</span></li>
+    </ul>
+
+    <p class="prose" style="margin-top:24px;font-size:12px;color:var(--ink-mid);font-family:var(--serif);font-style:italic;">
+      Repo: <a href="https://github.com/jalulia/YoshiOS.git" style="color:var(--signal);text-decoration:none;border-bottom:1px solid var(--signal-soft);">github.com/jalulia/YoshiOS</a>
+    </p>
+  </section>
+</div>
+
+<!-- ============================================================
+     § 06 — SOUND & INSULATION
+============================================================ -->
+<div class="page">
+  <div class="running-head">
+    <div>Yoshi Dossier</div>
+    <div class="center">§ 06 &middot; Sound &amp; Insulation</div>
+    <div class="right">15</div>
+  </div>
+
+  <section class="section" id="sec-06">
+    <div class="section-head">
+      <div class="section-num">§ 06</div>
+      <div class="section-name">Sound &amp; Insulation Strategy</div>
+      <div class="section-tag">Stream A · Acoustic</div>
+    </div>
+
+    <div class="prose">
+      <p class="lead">Two complete acoustic / thermal stacks, captured from notes shared by Matt. Same layering logic, different price-and-weight tier at every layer. The substitutions reveal the trade-offs &mdash; mass for damping, weight for thermal, finish for cost.</p>
+      <p>Every layer does one of three jobs: <strong>damping</strong> (CLD mat stops the steel ringing), <strong>blocking</strong> (CCF + MLV decouples and absorbs airborne noise), or <strong>filling</strong> (Thinsulate handles thermal R-value plus interior absorption). Confusing one for another is the most common mistake &mdash; you can&rsquo;t substitute layers between jobs.</p>
+    </div>
+
+    <table class="compare">
+      <thead>
+        <tr>
+          <th class="col-feat">Feature</th>
+          <th class="col-prem">Premium · Heavy-Duty</th>
+          <th class="col-opt">Optimized · Lightweight</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="feat">Target use</td>
+          <td>Maximum noise &amp; heat isolation &mdash; road trip quiet, highway cruising comfort</td>
+          <td>Excellent damping with ~40% less added weight</td>
+        </tr>
+        <tr>
+          <td class="feat">Floor stack</td>
+          <td><strong>Damplifier Pro</strong> (25–40% coverage) → Luxury Liner Pro full coverage (foam down) → ½&Prime; marine ply subfloor → vinyl / laminate finish</td>
+          <td><strong>Noico 80 mil</strong> (40–50%) → ¼&Prime; closed-cell foam (EZ-Cool / Thinsulate) → ⅛&Prime; MLV sheet (0.5 lb/ft²) → ⅜&Prime; birch ply → vinyl finish</td>
+        </tr>
+        <tr>
+          <td class="feat">Walls / sliding door</td>
+          <td>Damplifier Pro + Thinsulate + vapor barrier + interior panel</td>
+          <td>Noico 80 mil + 1&Prime; Thinsulate (SM600L) + vapor barrier + panel</td>
+        </tr>
+        <tr>
+          <td class="feat">Ceiling</td>
+          <td>Damplifier + 1&Prime; Thinsulate + vapor barrier</td>
+          <td>1&Prime; Thinsulate only &mdash; lighter, good heat resistance</td>
+        </tr>
+        <tr>
+          <td class="feat">Rear firewall</td>
+          <td>Double layer: Damplifier + Luxury Liner Pro</td>
+          <td>Damplifier + ½&Prime; CCF + ⅛&Prime; MLV</td>
+        </tr>
+        <tr>
+          <td class="feat">Wheel wells</td>
+          <td>Damplifier + Spectrum spray or LLP patches</td>
+          <td>Damplifier + LizardSkin Sound Control</td>
+        </tr>
+        <tr>
+          <td class="feat">Total weight (est.)</td>
+          <td><span class="mono">~110–130 lbs</span></td>
+          <td><span class="mono">~60–75 lbs</span></td>
+        </tr>
+        <tr>
+          <td class="feat">Thermal R-value</td>
+          <td>~R-4 &mdash; high radiant + conductive barrier</td>
+          <td>~R-3.5 &mdash; very good for the weight</td>
+        </tr>
+        <tr>
+          <td class="feat">Airborne noise (STC)</td>
+          <td><span class="mono">25–30 dB</span></td>
+          <td><span class="mono">18–22 dB</span></td>
+        </tr>
+        <tr>
+          <td class="feat">Materials cost</td>
+          <td><span class="mono">$900–1,200</span></td>
+          <td><span class="mono">$450–600</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="stamp-card" data-stamp="Vanagon Note">
+      <h4>T3-specific considerations</h4>
+      <p>Rear firewall treatment carries unusual weight on a Vanagon &mdash; the engine sits directly behind the bench, so that wall is your back when seated. The double-layer premium spec is doing real work there.</p>
+      <p>The engine deck lid is a known T3 weak point: original sound-damping disintegrates with age and is commonly replaced with EVA foam tiles plus a CLD layer. Not in this table but worth pricing in.</p>
+      <p>Weight matters more on a Vanagon than on a modern Sprinter. The optimized column is probably the more honest target for a T3 already weight-sensitive when new.</p>
+    </div>
+  </section>
+</div>
+
+<!-- ============================================================
+     § 07 — SERVICE RECORD
+============================================================ -->
+<div class="page">
+  <div class="running-head">
+    <div>Yoshi Dossier</div>
+    <div class="center">§ 07 &middot; Service Record</div>
+    <div class="right">17</div>
+  </div>
+
+  <section class="section" id="sec-07">
+    <div class="section-head">
+      <div class="section-num">§ 07</div>
+      <div class="section-name">Service Record</div>
+      <div class="section-tag">Maintenance Chronology</div>
+    </div>
+
+    <div class="prose">
+      <p class="lead">Major service events from before and after acquisition. Pre-acquisition entries reconstructed from previous owner&rsquo;s records; post-acquisition entries are first-hand. Routine oil changes between events are not all individually logged.</p>
+    </div>
+
+    <div class="kv">
+      <dl><dt>18 Jul 2014</dt><dd><strong>EuroPro</strong> &middot; Costa Mesa, CA<br>Engine swap (EJ22) &middot; steering rack &middot; catalytic converter &middot; power steering</dd></dl>
+      <dl><dt>23 May 2016</dt><dd><strong>Truline Automotive</strong> &middot; Van Nuys, CA &middot; <span class="mono">$1,557.60</span><br>Solar control panel &middot; house batteries &middot; water pumps &middot; speakers</dd></dl>
+      <dl><dt>26 Apr 2021</dt><dd>Possible new starter installed (per prior owner)</dd></dl>
+      <dl><dt>30 Aug 2021</dt><dd><strong>Acquired from Jair Melendez</strong> &middot; <span class="mono">$18,000</span> &middot; <span class="mono">224,132 mi</span></dd></dl>
+      <dl><dt>1 Sep 2021</dt><dd><strong>Gomora Auto Service</strong> &middot; Los Angeles, CA &middot; <span class="mono">$1,442.13</span><br>Clutch assembly replaced (prior owner paid $600 toward this)</dd></dl>
+      <dl><dt>24 Sep 2021</dt><dd><strong>North Westy</strong> &middot; Seattle, WA &middot; <span class="mono">$1,914.41</span><br>Transmission replaced &middot; clutch &middot; flywheel &middot; pilot &amp; release bearing<br>New tires: Vredestein Quatrac 225/55 R16 99W XL ($515.96)</dd></dl>
+      <dl><dt>4 Oct 2021</dt><dd><strong>Berlin Auto Services</strong> &middot; Berlin, MD &middot; <span class="mono">$501.08</span><br>New starter</dd></dl>
+      <dl><dt>23 Nov 2021</dt><dd><strong>Bruno&rsquo;s VW &amp; Audi Repair</strong> &middot; Middle Village, Queens, NY<br>General inspection &middot; front right wheel bearing tightened &middot; rear driver-side axle resealed &middot; battery charged &middot; wipers replaced</dd></dl>
+      <dl><dt>15 Aug 2023</dt><dd>Oil change &middot; <span class="mono">240,600 mi</span></dd></dl>
+      <dl><dt>5 Sep 2023</dt><dd>Valvoline oil change &middot; ~3,650 mi driven after</dd></dl>
+    </div>
+  </section>
+</div>
+
+<!-- ============================================================
+     § 08 — OPEN ITEMS & TO-DO
+============================================================ -->
+<div class="page">
+  <div class="running-head">
+    <div>Yoshi Dossier</div>
+    <div class="center">§ 08 &middot; Open Items</div>
+    <div class="right">19</div>
+  </div>
+
+  <section class="section" id="sec-08">
+    <div class="section-head">
+      <div class="section-num">§ 08</div>
+      <div class="section-name">Open Items &amp; To-Do</div>
+      <div class="section-tag">Exterior · Interior · OS</div>
+    </div>
+
+    <div class="prose">
+      <p class="lead">Outstanding work, organized by stream. Not prioritized — that&rsquo;s a separate conversation. This is the master list.</p>
+    </div>
+
+    <div class="sub-head">
+      <div class="sub-num">§ 08.1</div>
+      <div class="sub-name">Exterior &amp; body</div>
+    </div>
+    <ul class="status-list">
+      <li><span class="mark">○</span><span>Body damage from hit &amp; run</span></li>
+      <li><span class="mark">○</span><span>Rust cleanup &middot; new paint job</span></li>
+      <li><span class="mark">○</span><span>Bent fender &middot; missing fender caps</span></li>
+      <li><span class="mark">○</span><span>Windshield wiper fluid reservoir &middot; better wipers</span></li>
+      <li><span class="mark">○</span><span>Paint front luggage area with white boat-deck paint &middot; install luggage compartment</span></li>
+      <li><span class="mark">○</span><span>Flood lights &middot; Thule awning leg</span></li>
+      <li><span class="mark">○</span><span>Missing water tank hookup cover</span></li>
+      <li><span class="mark">○</span><span>Replace side-view mirrors (TBD)</span></li>
+    </ul>
+
+    <div class="sub-head">
+      <div class="sub-num">§ 08.2</div>
+      <div class="sub-name">Interior &amp; cabinetry</div>
+    </div>
+    <ul class="status-list">
+      <li><span class="mark done">✓</span><span>Bench structure built &mdash; lid on drawer slides, back hinged, gas struts in</span></li>
+      <li><span class="mark done">✓</span><span>House battery bank + Victron stack installed and tested in bench cavity</span></li>
+      <li><span class="mark done">✓</span><span>Foam spec settled (1.8 PCF / 36 ILD base + 2.0 PCF / 28 ILD comfort, dual layer)</span></li>
+      <li><span class="mark done">✓</span><span>Upholstery + moisture stack settled (fabric / BellBloc 68 / batting / sew foam / foam)</span></li>
+      <li><span class="mark next">→</span><span><strong>Next:</strong> Source foam &mdash; Canal Rubber, Economy Foam, or Foam R Us</span></li>
+      <li><span class="mark">○</span><span>Source BellBloc 68, batting, channel sew foam, notions</span></li>
+      <li><span class="mark">○</span><span>Sew test strip (fabric + BellBloc + sew foam) before committing to full panels</span></li>
+      <li><span class="mark">○</span><span>Sew seat &amp; back upholstery &middot; mattress panels follow</span></li>
+      <li><span class="mark">○</span><span>Cabinetry: finish design &middot; select panel material, slides, hinges, handles, sink, faucet, tiles</span></li>
+      <li><span class="mark">○</span><span>Remove and store/sell existing cabinetry &middot; fabricate and install new</span></li>
+      <li><span class="mark">○</span><span>Finalize overhead compartment &middot; shifter console &middot; center console</span></li>
+      <li><span class="mark">○</span><span>Replace front door panels</span></li>
+      <li><span class="mark">○</span><span>Remove unnecessary original carpet</span></li>
+      <li><span class="mark">○</span><span>Sound dampening &mdash; choose between premium / optimized stacks (see § 06)</span></li>
+    </ul>
+
+    <div class="sub-head">
+      <div class="sub-num">§ 08.3</div>
+      <div class="sub-name">YoshiOS</div>
+    </div>
+    <ul class="status-list">
+      <li><span class="mark done">✓</span><span>Working prototype on Kingdel &mdash; all three screens, boot sequence, transitions</span></li>
+      <li><span class="mark next">→</span><span><strong>Next:</strong> Connect Cerbo GX &mdash; live battery / solar / load data</span></li>
+      <li><span class="mark">○</span><span>Boot/login optimization &middot; BIOS auto-power-on</span></li>
+      <li><span class="mark">○</span><span>WitMotion IMU integration &middot; Spotify API &middot; map tiles</span></li>
+      <li><span class="mark">○</span><span>Center-console hardware &mdash; Philmore switches, rotary encoder, custom knobs</span></li>
+      <li><span class="mark">○</span><span>Long-horizon: Teensy controls &middot; RP2040 + amber CRT pipeline</span></li>
+    </ul>
+  </section>
+</div>
+
+<!-- ============================================================
+     § 09 — MATERIAL RESOURCES
+============================================================ -->
+<div class="page">
+  <div class="running-head">
+    <div>Yoshi Dossier</div>
+    <div class="center">§ 09 &middot; Material Resources</div>
+    <div class="right">21</div>
+  </div>
+
+  <section class="section" id="sec-09">
+    <div class="section-head">
+      <div class="section-num">§ 09</div>
+      <div class="section-name">Material Resources</div>
+      <div class="section-tag">Standing References</div>
+    </div>
+
+    <div class="prose">
+      <p>Resources flagged across both streams. Standing references for materials, finishes, and suppliers &mdash; not yet committed to, but held for later review.</p>
+    </div>
+
+    <div class="kv">
+      <dl><dt>GAHWD · Antique White</dt><dd><a href="https://www.gahwd.com/p-1942-antique-white.aspx" style="color:var(--signal);text-decoration:none;border-bottom:1px solid var(--signal-soft);">gahwd.com/p-1942-antique-white</a> &middot; finish reference, context TBD <span class="signal-tag">Saved</span></dd></dl>
+      <dl><dt>FoamByMail</dt><dd>Online supplier (formerly The Foam Factory). Brand-name cross-reference: &ldquo;HD36-HQ&rdquo; = 1.8 PCF / 36 ILD base layer &middot; &ldquo;Lux-HQ&rdquo; = 2.0 PCF / 28 ILD comfort layer. &ldquo;HD&rdquo; = high density, &ldquo;HQ&rdquo; = high quality, &ldquo;Lux&rdquo; = luxury line &mdash; all brand-specific marketing, not industry terms.</dd></dl>
+      <dl><dt>Sailrite</dt><dd>Channel pleating tutorials, foam protection guides, project layouts</dd></dl>
+      <dl><dt>Action Upholstery</dt><dd>BellBloc 68 moisture liner by the yard</dd></dl>
+      <dl><dt>Canal Rubber Supply</dt><dd>329 Canal St, Manhattan &middot; walk-in foam, custom cut</dd></dl>
+      <dl><dt>Economy Foam</dt><dd>236 W 26th St &middot; Mon–Thu 8am–3pm &middot; latex options, marine cushion expertise</dd></dl>
+      <dl><dt>Foam R Us</dt><dd>30-60 Steinway St, Astoria &middot; 7 days, cut while you wait</dd></dl>
+      <dl><dt>Marvac Electronics</dt><dd>Philmore switches &amp; vintage XT/AT power switches for center console</dd></dl>
+      <dl><dt>DigiKey · Kilo OEJA-90-2-5</dt><dd>Knurled aluminum knob, 0.250&Prime; shaft &middot; potential console knob</dd></dl>
+      <dl><dt>Adafruit · PB86</dt><dd>Step switches with red LED &middot; TR-808-style sequencer feel for source select</dd></dl>
+      <dl><dt>Love My Switches · Mission Control</dt><dd>32mm aluminum knob, ¼&Prime; shaft &middot; volume rotary candidate</dd></dl>
+    </div>
+
+    <!-- ============ COLOPHON ============ -->
+    <div class="colophon">
+      <div>
+        <h5>Vehicle</h5>
+        <p>1983 VW Vanagon GL Westfalia<br>T3 platform, ivory<br>Pop-top · EJ22-swapped</p>
+      </div>
+      <div>
+        <h5>Document</h5>
+        <p>Yoshi Project Dossier<br>v5 · compiled 15 May 2026<br>DOC · YO-001</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+</body>
+</html>
