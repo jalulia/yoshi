@@ -1,0 +1,56 @@
+{
+  "lastModified": "2026-05-15",
+  "sections": [
+    {
+      "id": "exterior",
+      "num": "08.1",
+      "name": "Exterior & body",
+      "items": [
+        {"id": "ext-001", "text": "Body damage from hit & run", "priority": "primary", "note": null, "order": 0},
+        {"id": "ext-002", "text": "Rust cleanup · new paint job", "priority": "secondary", "note": null, "order": 1},
+        {"id": "ext-003", "text": "Bent fender · missing fender caps", "priority": "secondary", "note": null, "order": 2},
+        {"id": "ext-004", "text": "Windshield wiper fluid reservoir", "priority": "secondary", "note": null, "order": 3},
+        {"id": "ext-005", "text": "Paint front luggage area with white boat-deck paint", "priority": "done", "note": "Summer 2024", "order": 4},
+        {"id": "ext-006", "text": "Water tank hookup cover replaced", "priority": "done", "note": "Summer 2025", "order": 5},
+        {"id": "ext-007", "text": "Windshield wipers replaced", "priority": "done", "note": null, "order": 6}
+      ]
+    },
+    {
+      "id": "interior",
+      "num": "08.2",
+      "name": "Interior & cabinetry",
+      "items": [
+        {"id": "int-001", "text": "Purchase foam — 1.8 PCF / 36 ILD base + 2.0 PCF / 28 ILD comfort, dual layer (Canal Rubber, Economy Foam, Foamrus)", "priority": "primary", "note": null, "order": 0},
+        {"id": "int-002", "text": "Select upholstery fabric and batting / BellBloc", "priority": "primary", "note": null, "order": 1},
+        {"id": "int-003", "text": "Cabinetry: finish design · select panel material, slides, hinges, handles, sink, faucet, tiles", "priority": "primary", "note": null, "order": 2},
+        {"id": "int-004", "text": "Fabricate and install new cabinetry", "priority": "primary", "note": null, "order": 3},
+        {"id": "int-005", "text": "Shifter console · center console", "priority": "primary", "note": null, "order": 4},
+        {"id": "int-006", "text": "Sell existing cabinetry", "priority": "secondary", "note": null, "order": 5},
+        {"id": "int-007", "text": "Repair front door panels", "priority": "secondary", "note": null, "order": 6},
+        {"id": "int-008", "text": "Remove carpet from front cabin", "priority": "secondary", "note": null, "order": 7},
+        {"id": "int-009", "text": "Bench structure built — lid on drawer slides, back hinged", "priority": "done", "note": null, "order": 8},
+        {"id": "int-010", "text": "House battery bank + Victron stack installed and tested in bench cavity", "priority": "done", "note": null, "order": 9},
+        {"id": "int-011", "text": "Existing cabinetry removed and stored", "priority": "done", "note": null, "order": 10},
+        {"id": "int-012", "text": "Main original carpet removed from cabin", "priority": "done", "note": "Spring 2026", "order": 11},
+        {"id": "int-013", "text": "Sound dampening stack chosen — Premium · Heavy-Duty (see § 06)", "priority": "done", "note": null, "order": 12}
+      ]
+    },
+    {
+      "id": "yoshios",
+      "num": "08.3",
+      "name": "YoshiOS",
+      "items": [
+        {"id": "yos-001", "text": "Connect Cerbo GX — live battery / solar / load data", "priority": "primary", "note": null, "order": 0},
+        {"id": "yos-002", "text": "Center-console hardware — Philmore switches, rotary encoder, custom knobs", "priority": "primary", "note": null, "order": 1},
+        {"id": "yos-003", "text": "Teensy 4.1 physical controls", "priority": "primary", "note": null, "order": 2},
+        {"id": "yos-004", "text": "Boot/login optimization · BIOS auto-power-on", "priority": "secondary", "note": null, "order": 3},
+        {"id": "yos-005", "text": "WitMotion IMU integration · Spotify API · map tiles", "priority": "secondary", "note": null, "order": 4},
+        {"id": "yos-006", "text": "RP2040 + amber CRT pipeline", "priority": "secondary", "note": null, "order": 5},
+        {"id": "yos-007", "text": "Working prototype on Kingdel — all three screens, boot sequence, transitions", "priority": "done", "note": "Spring 2026", "order": 6}
+      ]
+    }
+  ],
+  "bonus": [
+    {"id": "bon-001", "text": "Flood lights · Thule awning leg", "note": null, "order": 0}
+  ]
+}

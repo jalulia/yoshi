@@ -31,6 +31,7 @@
     /* signal — saturated, single ink */
     --signal:       #E83A0C;   /* hot orange-red, the "stamp" color */
     --signal-soft:  #FFEDE6;   /* signal tint for highlight bars */
+    --done:         #2D8A4E;   /* completed items */
 
     /* yoshi accents — used sparingly, never washed */
     --amber:        #F0AD3B;   /* YoshiOS amber, for OS-related marks */
@@ -582,8 +583,8 @@
     vertical-align: bottom;
   }
   .compare thead th.col-feat { width: 28%; color: var(--ink-light); }
-  .compare thead th.col-prem { color: var(--signal); }
-  .compare thead th.col-opt  { color: var(--ink); }
+  .compare thead th.col-prem { color: var(--done); }
+  .compare thead th.col-opt  { color: var(--ink-faint); }
   .compare tbody td {
     padding: 14px 16px 14px 0;
     border-bottom: 0.5px solid var(--rule);
@@ -608,6 +609,9 @@
     line-height: 1.6;
   }
   .compare tbody td strong { font-weight: 600; color: var(--ink); }
+  .compare tbody td.dimmed { color: var(--ink-faint); }
+  .compare tbody td.dimmed strong { color: var(--ink-faint); }
+  .compare tbody td.dimmed .mono { color: var(--ink-faint); }
 
   /* ==========================================================
      STATUS LIST — checkbox-style
@@ -631,12 +635,185 @@
   .status-list .mark {
     font-family: var(--mono);
     font-size: 10px;
-    color: var(--signal);
+    color: var(--ink-light);
     letter-spacing: 0;
     text-align: center;
   }
-  .status-list .mark.done { color: var(--ink-mid); }
+  .status-list .mark.primary { color: var(--signal); }
+  .status-list .mark.secondary { color: var(--amber); }
+  .status-list .mark.done { color: var(--done); font-weight: 600; }
+  .status-list .mark.bonus { color: var(--ink-light); }
   .status-list .mark.next { color: var(--signal); }
+
+  .tier-break {
+    margin: 8px 0 8px 60px;
+    max-width: 720px;
+    border-top: 0.5px solid var(--rule);
+  }
+
+  /* ── Tracker interactive overrides ── */
+  .tracker-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    margin-top: -8px;
+  }
+  .tracker-controls .status { transition: opacity 0.3s; }
+  .tracker-controls .status.saved { color: var(--done); }
+  .tracker-controls .status.saving { color: var(--amber); }
+  .tracker-controls .status.error { color: var(--signal); }
+  .tracker-controls .setup-link {
+    color: var(--ink-faint);
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font: inherit;
+    letter-spacing: inherit;
+    padding: 0;
+  }
+  .tracker-controls .setup-link:hover { color: var(--ink-mid); }
+
+  .status-list li {
+    position: relative;
+  }
+  [data-editable] .status-list .mark {
+    cursor: pointer;
+    transition: color 0.15s, transform 0.15s;
+    user-select: none;
+  }
+  [data-editable] .status-list .mark:hover {
+    transform: scale(1.3);
+  }
+  [data-editable] .item-text {
+    cursor: text;
+    border-radius: 2px;
+    transition: background 0.15s;
+    outline: none;
+  }
+  [data-editable] .item-text:hover {
+    background: var(--signal-soft);
+  }
+  [data-editable] .item-text:focus {
+    background: var(--signal-soft);
+    box-shadow: 0 1px 0 0 var(--signal);
+  }
+  .item-note {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+    margin-left: 6px;
+  }
+  [data-editable] .item-delete {
+    position: absolute;
+    right: -24px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    background: none;
+    border: none;
+    padding: 4px;
+    line-height: 1;
+  }
+  [data-editable] .status-list li:hover .item-delete { opacity: 1; }
+  [data-editable] .item-delete:hover { color: var(--signal); }
+
+  .tracker-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0 0 60px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: none;
+    border: 0.5px dashed var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tracker-add:hover {
+    color: var(--signal);
+    border-color: var(--signal);
+  }
+
+  .tracker-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .tracker-modal {
+    background: var(--page);
+    border: 1px solid var(--rule);
+    padding: 32px;
+    max-width: 440px;
+    width: 90%;
+    font-family: var(--body);
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  .tracker-modal h3 {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    margin: 0 0 16px;
+  }
+  .tracker-modal input {
+    width: 100%;
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    border: 1px solid var(--rule);
+    background: var(--page);
+    color: var(--ink);
+    margin: 8px 0 16px;
+    box-sizing: border-box;
+  }
+  .tracker-modal input:focus {
+    outline: none;
+    border-color: var(--signal);
+  }
+  .tracker-modal-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .tracker-modal button {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid var(--rule);
+    background: none;
+    color: var(--ink-mid);
+    cursor: pointer;
+  }
+  .tracker-modal button.primary-btn {
+    background: var(--ink);
+    color: var(--page);
+    border-color: var(--ink);
+  }
 
   /* ==========================================================
      FOOTER / COLOPHON
@@ -1490,7 +1667,7 @@
     </div>
 
     <div class="prose">
-      <p class="lead">Two complete acoustic / thermal stacks, captured from notes shared by Matt. Same layering logic, different price-and-weight tier at every layer. The substitutions reveal the trade-offs &mdash; mass for damping, weight for thermal, finish for cost.</p>
+      <p class="lead">Two complete acoustic / thermal stacks, captured from notes shared by Matt. Same layering logic, different price-and-weight tier at every layer. <strong>Premium &middot; Heavy-Duty was selected</strong> &mdash; the weight penalty is worth it on a van where the engine sits directly behind the cabin. The optimized stack is retained below for reference.</p>
       <p>Every layer does one of three jobs: <strong>damping</strong> (CLD mat stops the steel ringing), <strong>blocking</strong> (CCF + MLV decouples and absorbs airborne noise), or <strong>filling</strong> (Thinsulate handles thermal R-value plus interior absorption). Confusing one for another is the most common mistake &mdash; you can&rsquo;t substitute layers between jobs.</p>
     </div>
 
@@ -1498,7 +1675,7 @@
       <thead>
         <tr>
           <th class="col-feat">Feature</th>
-          <th class="col-prem">Premium · Heavy-Duty</th>
+          <th class="col-prem">✓ Premium · Heavy-Duty</th>
           <th class="col-opt">Optimized · Lightweight</th>
         </tr>
       </thead>
@@ -1506,52 +1683,52 @@
         <tr>
           <td class="feat">Target use</td>
           <td>Maximum noise &amp; heat isolation &mdash; road trip quiet, highway cruising comfort</td>
-          <td>Excellent damping with ~40% less added weight</td>
+          <td class="dimmed">Excellent damping with ~40% less added weight</td>
         </tr>
         <tr>
           <td class="feat">Floor stack</td>
           <td><strong>Damplifier Pro</strong> (25–40% coverage) → Luxury Liner Pro full coverage (foam down) → ½&Prime; marine ply subfloor → vinyl / laminate finish</td>
-          <td><strong>Noico 80 mil</strong> (40–50%) → ¼&Prime; closed-cell foam (EZ-Cool / Thinsulate) → ⅛&Prime; MLV sheet (0.5 lb/ft²) → ⅜&Prime; birch ply → vinyl finish</td>
+          <td class="dimmed"><strong>Noico 80 mil</strong> (40–50%) → ¼&Prime; closed-cell foam (EZ-Cool / Thinsulate) → ⅛&Prime; MLV sheet (0.5 lb/ft²) → ⅜&Prime; birch ply → vinyl finish</td>
         </tr>
         <tr>
           <td class="feat">Walls / sliding door</td>
           <td>Damplifier Pro + Thinsulate + vapor barrier + interior panel</td>
-          <td>Noico 80 mil + 1&Prime; Thinsulate (SM600L) + vapor barrier + panel</td>
+          <td class="dimmed">Noico 80 mil + 1&Prime; Thinsulate (SM600L) + vapor barrier + panel</td>
         </tr>
         <tr>
           <td class="feat">Ceiling</td>
           <td>Damplifier + 1&Prime; Thinsulate + vapor barrier</td>
-          <td>1&Prime; Thinsulate only &mdash; lighter, good heat resistance</td>
+          <td class="dimmed">1&Prime; Thinsulate only &mdash; lighter, good heat resistance</td>
         </tr>
         <tr>
           <td class="feat">Rear firewall</td>
           <td>Double layer: Damplifier + Luxury Liner Pro</td>
-          <td>Damplifier + ½&Prime; CCF + ⅛&Prime; MLV</td>
+          <td class="dimmed">Damplifier + ½&Prime; CCF + ⅛&Prime; MLV</td>
         </tr>
         <tr>
           <td class="feat">Wheel wells</td>
           <td>Damplifier + Spectrum spray or LLP patches</td>
-          <td>Damplifier + LizardSkin Sound Control</td>
+          <td class="dimmed">Damplifier + LizardSkin Sound Control</td>
         </tr>
         <tr>
           <td class="feat">Total weight (est.)</td>
           <td><span class="mono">~110–130 lbs</span></td>
-          <td><span class="mono">~60–75 lbs</span></td>
+          <td class="dimmed"><span class="mono">~60–75 lbs</span></td>
         </tr>
         <tr>
           <td class="feat">Thermal R-value</td>
           <td>~R-4 &mdash; high radiant + conductive barrier</td>
-          <td>~R-3.5 &mdash; very good for the weight</td>
+          <td class="dimmed">~R-3.5 &mdash; very good for the weight</td>
         </tr>
         <tr>
           <td class="feat">Airborne noise (STC)</td>
           <td><span class="mono">25–30 dB</span></td>
-          <td><span class="mono">18–22 dB</span></td>
+          <td class="dimmed"><span class="mono">18–22 dB</span></td>
         </tr>
         <tr>
           <td class="feat">Materials cost</td>
           <td><span class="mono">$900–1,200</span></td>
-          <td><span class="mono">$450–600</span></td>
+          <td class="dimmed"><span class="mono">$450–600</span></td>
         </tr>
       </tbody>
     </table>
@@ -1619,57 +1796,16 @@
     </div>
 
     <div class="prose">
-      <p class="lead">Outstanding work, organized by stream. Not prioritized — that&rsquo;s a separate conversation. This is the master list.</p>
+      <p class="lead">Outstanding work, organized by stream and priority. <strong>Primary</strong> is the current focus; <strong>Secondary</strong> follows. Completed items retained at the bottom of each section for build history. <strong>Bonus</strong> is a catchall for nice-to-haves across all streams.</p>
+      <div class="tracker-controls">
+        <span id="tracker-status" class="status"></span>
+        <button id="tracker-setup" class="setup-link" title="GitHub settings">⚙ connect</button>
+      </div>
     </div>
 
-    <div class="sub-head">
-      <div class="sub-num">§ 08.1</div>
-      <div class="sub-name">Exterior &amp; body</div>
+    <div id="tracker-root">
+      <!-- Rendered from data/tasks.json -->
     </div>
-    <ul class="status-list">
-      <li><span class="mark">○</span><span>Body damage from hit &amp; run</span></li>
-      <li><span class="mark">○</span><span>Rust cleanup &middot; new paint job</span></li>
-      <li><span class="mark">○</span><span>Bent fender &middot; missing fender caps</span></li>
-      <li><span class="mark">○</span><span>Windshield wiper fluid reservoir &middot; better wipers</span></li>
-      <li><span class="mark">○</span><span>Paint front luggage area with white boat-deck paint &middot; install luggage compartment</span></li>
-      <li><span class="mark">○</span><span>Flood lights &middot; Thule awning leg</span></li>
-      <li><span class="mark">○</span><span>Missing water tank hookup cover</span></li>
-      <li><span class="mark">○</span><span>Replace side-view mirrors (TBD)</span></li>
-    </ul>
-
-    <div class="sub-head">
-      <div class="sub-num">§ 08.2</div>
-      <div class="sub-name">Interior &amp; cabinetry</div>
-    </div>
-    <ul class="status-list">
-      <li><span class="mark done">✓</span><span>Bench structure built &mdash; lid on drawer slides, back hinged, gas struts in</span></li>
-      <li><span class="mark done">✓</span><span>House battery bank + Victron stack installed and tested in bench cavity</span></li>
-      <li><span class="mark done">✓</span><span>Foam spec settled (1.8 PCF / 36 ILD base + 2.0 PCF / 28 ILD comfort, dual layer)</span></li>
-      <li><span class="mark done">✓</span><span>Upholstery + moisture stack settled (fabric / BellBloc 68 / batting / sew foam / foam)</span></li>
-      <li><span class="mark next">→</span><span><strong>Next:</strong> Source foam &mdash; Canal Rubber, Economy Foam, or Foam R Us</span></li>
-      <li><span class="mark">○</span><span>Source BellBloc 68, batting, channel sew foam, notions</span></li>
-      <li><span class="mark">○</span><span>Sew test strip (fabric + BellBloc + sew foam) before committing to full panels</span></li>
-      <li><span class="mark">○</span><span>Sew seat &amp; back upholstery &middot; mattress panels follow</span></li>
-      <li><span class="mark">○</span><span>Cabinetry: finish design &middot; select panel material, slides, hinges, handles, sink, faucet, tiles</span></li>
-      <li><span class="mark">○</span><span>Remove and store/sell existing cabinetry &middot; fabricate and install new</span></li>
-      <li><span class="mark">○</span><span>Finalize overhead compartment &middot; shifter console &middot; center console</span></li>
-      <li><span class="mark">○</span><span>Replace front door panels</span></li>
-      <li><span class="mark">○</span><span>Remove unnecessary original carpet</span></li>
-      <li><span class="mark">○</span><span>Sound dampening &mdash; choose between premium / optimized stacks (see § 06)</span></li>
-    </ul>
-
-    <div class="sub-head">
-      <div class="sub-num">§ 08.3</div>
-      <div class="sub-name">YoshiOS</div>
-    </div>
-    <ul class="status-list">
-      <li><span class="mark done">✓</span><span>Working prototype on Kingdel &mdash; all three screens, boot sequence, transitions</span></li>
-      <li><span class="mark next">→</span><span><strong>Next:</strong> Connect Cerbo GX &mdash; live battery / solar / load data</span></li>
-      <li><span class="mark">○</span><span>Boot/login optimization &middot; BIOS auto-power-on</span></li>
-      <li><span class="mark">○</span><span>WitMotion IMU integration &middot; Spotify API &middot; map tiles</span></li>
-      <li><span class="mark">○</span><span>Center-console hardware &mdash; Philmore switches, rotary encoder, custom knobs</span></li>
-      <li><span class="mark">○</span><span>Long-horizon: Teensy controls &middot; RP2040 + amber CRT pipeline</span></li>
-    </ul>
   </section>
 </div>
 
@@ -1721,6 +1857,329 @@
     </div>
   </section>
 </div>
+
+<script>
+/* ─────────────────────────────────────────────
+   § 08 Live Tracker
+   Reads/writes data/tasks.json via GitHub API
+   ───────────────────────────────────────────── */
+(function() {
+  const REPO = 'jalulia/yoshi';
+  const DATA_PATH = 'data/tasks.json';
+  const PRIORITY_ORDER = ['primary','secondary','done'];
+  const PRIORITY_CYCLE = ['primary','secondary','done','bonus'];
+  const MARKS = { primary:'○', secondary:'○', done:'✓', bonus:'○' };
+
+  let _data = null;
+  let _sha = null;
+  let _saveTimer = null;
+  const root = document.getElementById('tracker-root');
+  const statusEl = document.getElementById('tracker-status');
+  const setupBtn = document.getElementById('tracker-setup');
+
+  function getToken() { return localStorage.getItem('yoshi-gh-token'); }
+  function isEditable() { return !!getToken(); }
+
+  /* ── Data I/O ── */
+  async function loadData() {
+    const token = getToken();
+    try {
+      if (token) {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${DATA_PATH}`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (!res.ok) throw new Error('API ' + res.status);
+        const json = await res.json();
+        _sha = json.sha;
+        _data = JSON.parse(atob(json.content));
+      } else {
+        const res = await fetch('data/tasks.json');
+        if (!res.ok) throw new Error('Fetch ' + res.status);
+        _data = await res.json();
+      }
+      render();
+    } catch(e) {
+      root.innerHTML = '<p style="color:var(--signal);font-family:var(--mono);font-size:10px;margin-left:60px;">Could not load tasks: ' + e.message + '</p>';
+    }
+  }
+
+  async function saveData() {
+    const token = getToken();
+    if (!token || !_data || !_sha) return;
+    setStatus('saving', 'Saving…');
+    _data.lastModified = new Date().toISOString().slice(0,10);
+    try {
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(_data, null, 2) + '\n')));
+      const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${DATA_PATH}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Update tasks — ' + _data.lastModified,
+          content: content,
+          sha: _sha
+        })
+      });
+      if (!res.ok) throw new Error('Save ' + res.status);
+      const json = await res.json();
+      _sha = json.content.sha;
+      setStatus('saved', 'Saved');
+      setTimeout(() => setStatus('',''), 2000);
+    } catch(e) {
+      setStatus('error', 'Save failed: ' + e.message);
+    }
+  }
+
+  function queueSave() {
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(saveData, 800);
+  }
+
+  function setStatus(cls, text) {
+    statusEl.className = 'status ' + cls;
+    statusEl.textContent = text;
+  }
+
+  /* ── Generate unique ID ── */
+  function newId(prefix) {
+    return prefix + '-' + Date.now().toString(36);
+  }
+
+  /* ── Render ── */
+  function render() {
+    if (!_data) return;
+    const editable = isEditable();
+    let html = '';
+
+    _data.sections.forEach(sec => {
+      html += `<div class="sub-head"><div class="sub-num">§ ${sec.num}</div><div class="sub-name">${esc(sec.name)}</div></div>`;
+
+      const grouped = {};
+      PRIORITY_ORDER.forEach(p => grouped[p] = []);
+      sec.items.forEach(item => {
+        if (item.priority === 'bonus') return;
+        if (!grouped[item.priority]) grouped[item.priority] = [];
+        grouped[item.priority].push(item);
+      });
+      PRIORITY_ORDER.forEach(p => grouped[p].sort((a,b) => a.order - b.order));
+
+      let first = true;
+      PRIORITY_ORDER.forEach(p => {
+        if (grouped[p].length === 0) return;
+        if (!first) html += '<div class="tier-break"></div>';
+        first = false;
+        html += '<ul class="status-list">';
+        grouped[p].forEach(item => {
+          html += renderItem(item, editable);
+        });
+        html += '</ul>';
+      });
+
+      if (editable) {
+        html += `<button class="tracker-add" data-section="${sec.id}">+ add</button>`;
+      }
+    });
+
+    // Bonus section
+    const bonusItems = (_data.bonus || []).slice().sort((a,b) => a.order - b.order);
+    // Also gather any items tagged bonus from sections
+    _data.sections.forEach(sec => {
+      sec.items.forEach(item => {
+        if (item.priority === 'bonus') bonusItems.push(item);
+      });
+    });
+
+    if (bonusItems.length > 0 || editable) {
+      html += '<div class="sub-head"><div class="sub-num">§ 08.4</div><div class="sub-name">Bonus</div></div>';
+      html += '<ul class="status-list">';
+      bonusItems.forEach(item => {
+        html += renderItem(item, editable, true);
+      });
+      html += '</ul>';
+      if (editable) {
+        html += `<button class="tracker-add" data-section="bonus">+ add</button>`;
+      }
+    }
+
+    root.innerHTML = html;
+    if (editable) root.setAttribute('data-editable','');
+    else root.removeAttribute('data-editable');
+    bindEvents();
+    updateSetupBtn();
+  }
+
+  function renderItem(item, editable, isBonus) {
+    const p = isBonus ? 'bonus' : item.priority;
+    const mark = MARKS[p] || '○';
+    const markCls = p + (p === 'done' ? ' done' : '');
+    const noteHtml = item.note ? ` <span class="item-note">· ${esc(item.note)}</span>` : '';
+    const delBtn = editable ? '<button class="item-delete" data-id="' + item.id + '" title="Remove">×</button>' : '';
+    return `<li data-item-id="${item.id}"><span class="mark ${markCls}" data-id="${item.id}">${mark}</span><span class="item-text" data-id="${item.id}">${esc(item.text)}</span>${noteHtml}${delBtn}</li>`;
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  /* ── Events ── */
+  function bindEvents() {
+    if (!isEditable()) return;
+
+    // Cycle priority on mark click
+    root.querySelectorAll('.mark[data-id]').forEach(el => {
+      el.addEventListener('click', () => {
+        const item = findItem(el.dataset.id);
+        if (!item) return;
+        const idx = PRIORITY_CYCLE.indexOf(item.priority);
+        item.priority = PRIORITY_CYCLE[(idx + 1) % PRIORITY_CYCLE.length];
+
+        // If cycled to bonus, move to bonus array
+        if (item.priority === 'bonus') {
+          removeItemFromSection(item.id);
+          if (!_data.bonus) _data.bonus = [];
+          _data.bonus.push({id: item.id, text: item.text, note: item.note, order: _data.bonus.length});
+        }
+        // If was in bonus and cycled away, move to first section
+        const inBonus = (_data.bonus || []).find(b => b.id === item.id);
+        if (inBonus && item.priority !== 'bonus') {
+          _data.bonus = _data.bonus.filter(b => b.id !== item.id);
+          _data.sections[0].items.push({id: item.id, text: item.text, note: item.note, priority: item.priority, order: 999});
+        }
+
+        render();
+        queueSave();
+      });
+    });
+
+    // Inline edit on text click
+    root.querySelectorAll('.item-text[data-id]').forEach(el => {
+      el.addEventListener('click', () => {
+        el.setAttribute('contenteditable', 'true');
+        el.focus();
+        // Select all text
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      });
+      el.addEventListener('blur', () => {
+        el.removeAttribute('contenteditable');
+        const item = findItem(el.dataset.id);
+        if (item && el.textContent.trim() !== item.text) {
+          item.text = el.textContent.trim();
+          queueSave();
+        }
+      });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+        if (e.key === 'Escape') {
+          const item = findItem(el.dataset.id);
+          if (item) el.textContent = item.text;
+          el.blur();
+        }
+      });
+    });
+
+    // Delete buttons
+    root.querySelectorAll('.item-delete[data-id]').forEach(el => {
+      el.addEventListener('click', () => {
+        const item = findItem(el.dataset.id);
+        if (!item) return;
+        if (!confirm('Remove "' + item.text.slice(0,50) + '…"?')) return;
+        removeItemFromSection(el.dataset.id);
+        if (_data.bonus) _data.bonus = _data.bonus.filter(b => b.id !== el.dataset.id);
+        render();
+        queueSave();
+      });
+    });
+
+    // Add buttons
+    root.querySelectorAll('.tracker-add').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const secId = btn.dataset.section;
+        const newItem = { id: newId(secId.slice(0,3)), text: 'New item', note: null, priority: 'primary', order: 999 };
+        if (secId === 'bonus') {
+          if (!_data.bonus) _data.bonus = [];
+          newItem.priority = 'bonus';
+          _data.bonus.push(newItem);
+        } else {
+          const sec = _data.sections.find(s => s.id === secId);
+          if (sec) sec.items.push(newItem);
+        }
+        render();
+        // Focus the new item for editing
+        const el = root.querySelector(`.item-text[data-id="${newItem.id}"]`);
+        if (el) { el.click(); }
+        queueSave();
+      });
+    });
+  }
+
+  function findItem(id) {
+    for (const sec of _data.sections) {
+      const item = sec.items.find(i => i.id === id);
+      if (item) return item;
+    }
+    if (_data.bonus) {
+      const item = _data.bonus.find(i => i.id === id);
+      if (item) return item;
+    }
+    return null;
+  }
+
+  function removeItemFromSection(id) {
+    _data.sections.forEach(sec => {
+      sec.items = sec.items.filter(i => i.id !== id);
+    });
+  }
+
+  /* ── Token setup ── */
+  function updateSetupBtn() {
+    setupBtn.textContent = getToken() ? '⚙ connected' : '⚙ connect';
+  }
+
+  setupBtn.addEventListener('click', () => {
+    const existing = getToken();
+    const overlay = document.createElement('div');
+    overlay.className = 'tracker-modal-overlay';
+    overlay.innerHTML = `
+      <div class="tracker-modal">
+        <h3>GitHub Connection</h3>
+        <p>Paste a GitHub personal access token with <strong>repo</strong> scope to enable editing. Token is stored in your browser only — never sent anywhere except GitHub's API.</p>
+        <p style="margin-top:8px;"><a href="https://github.com/settings/tokens/new?description=Yoshi+Dossier&scopes=repo" target="_blank" style="color:var(--signal);">Generate token →</a></p>
+        <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" value="${existing || ''}">
+        <div class="tracker-modal-buttons">
+          ${existing ? '<button id="token-disconnect">Disconnect</button>' : ''}
+          <button id="token-cancel">Cancel</button>
+          <button id="token-save" class="primary-btn">Save</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#token-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#token-save').onclick = () => {
+      const val = overlay.querySelector('#token-input').value.trim();
+      if (val) localStorage.setItem('yoshi-gh-token', val);
+      overlay.remove();
+      _sha = null;
+      loadData();
+    };
+    const discBtn = overlay.querySelector('#token-disconnect');
+    if (discBtn) discBtn.onclick = () => {
+      localStorage.removeItem('yoshi-gh-token');
+      overlay.remove();
+      _sha = null;
+      loadData();
+    };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  });
+
+  /* ── Init ── */
+  loadData();
+})();
+</script>
 
 </body>
 </html>
