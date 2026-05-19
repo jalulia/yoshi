@@ -1870,7 +1870,6 @@
       <div class="tracker-controls">
         <span id="tracker-status" class="status"></span>
         <button id="tracker-undo" class="setup-link" style="display:none;" title="Undo (Ctrl+Z)">↩ undo</button>
-        <button id="tracker-setup" class="setup-link" title="GitHub settings">connect GitHub to edit →</button>
       </div>
     </div>
 
@@ -1931,65 +1930,65 @@
 
 <script>
 /* ─────────────────────────────────────────────
-   § 08 Live Tracker v2
-   Reads/writes data/tasks.json via GitHub API
-   Undo · Drag-drop · UTF-8 safe
+   § 08 Live Tracker v3 — Supabase
+   No auth needed. Both users just open & edit.
    ───────────────────────────────────────────── */
 (function() {
-  const REPO = 'jalulia/yoshi';
-  const DATA_PATH = 'data/tasks.json';
+
+  /* ╔═══════════════════════════════════════════╗
+     ║  PASTE YOUR SUPABASE VALUES BELOW         ║
+     ╚═══════════════════════════════════════════╝ */
+  const SUPABASE_URL = 'https://odhvdtlhgvrpxcxsuzke.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kaHZkdGxoZ3ZycHhjeHN1emtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDAyNDgsImV4cCI6MjA5NDcxNjI0OH0.b3Df-ifRyqKECA2PV0cFHTj12KK6xMzaZu_w7xN99uU';
+
   const PRIORITY_ORDER = ['primary','secondary','done'];
-  const PRIORITY_CYCLE = ['primary','secondary','done']; // no bonus — bonus is set via menu only
+  const PRIORITY_CYCLE = ['primary','secondary','done'];
   const MARKS = { primary:'○', secondary:'○', done:'✓', bonus:'○' };
-  const SECTIONS = [
-    {id:'exterior', label:'Exterior & body'},
-    {id:'interior', label:'Interior & cabinetry'},
-    {id:'yoshios',  label:'YoshiOS'},
-    {id:'bonus',    label:'Bonus'}
+  const SECTION_META = [
+    {id:'exterior', num:'08.1', name:'Exterior & body'},
+    {id:'interior', num:'08.2', name:'Interior & cabinetry'},
+    {id:'yoshios',  num:'08.3', name:'YoshiOS'}
   ];
 
-  let _data = null, _sha = null, _saveTimer = null;
+  let _data = null, _saveTimer = null, _deletedIds = [];
   let _history = [], _openMenu = null;
   const MAX_UNDO = 50;
 
   const root = document.getElementById('tracker-root');
   const statusEl = document.getElementById('tracker-status');
-  const setupBtn = document.getElementById('tracker-setup');
   const undoBtn = document.getElementById('tracker-undo');
 
-  function getToken() { return localStorage.getItem('yoshi-gh-token'); }
-  function isEditable() { return !!getToken(); }
+  function isConfigured() { return SUPABASE_URL !== 'YOUR_SUPABASE_URL'; }
 
-  /* ── UTF-8–safe base64 ── */
-  function b64decode(str) {
-    const bin = atob(str);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return new TextDecoder().decode(bytes);
-  }
-  function b64encode(str) {
-    const bytes = new TextEncoder().encode(str);
-    let bin = '';
-    bytes.forEach(b => bin += String.fromCharCode(b));
-    return btoa(bin);
+  /* ── Supabase REST helpers ── */
+  function sb(path, opts) {
+    return fetch(SUPABASE_URL + '/rest/v1/' + path, Object.assign({
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      }
+    }, opts));
   }
 
   /* ── Undo ── */
   function snap() {
-    _history.push(JSON.stringify(_data));
+    _history.push(JSON.stringify({data:_data, deleted:_deletedIds}));
     if (_history.length > MAX_UNDO) _history.shift();
     undoBtn.style.display = '';
   }
   function undo() {
     if (!_history.length) return;
-    _data = JSON.parse(_history.pop());
+    const state = JSON.parse(_history.pop());
+    _data = state.data;
+    _deletedIds = state.deleted;
     if (!_history.length) undoBtn.style.display = 'none';
     render();
     queueSave();
     setStatus('saving','Undone — saving…');
   }
 
-  /* ── Status ── */
   function setStatus(cls, text) {
     statusEl.className = 'status ' + cls;
     statusEl.textContent = text;
@@ -1997,42 +1996,73 @@
 
   /* ── Data I/O ── */
   async function loadData() {
-    const token = getToken();
+    if (!isConfigured()) {
+      root.innerHTML = '<p style="color:var(--ink-mid);font-family:var(--mono);font-size:10px;margin-left:60px;">Supabase not configured — edit the two constants at the top of the script tag.</p>';
+      return;
+    }
     try {
-      if (token) {
-        const res = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + DATA_PATH, {
-          headers: {'Authorization':'Bearer '+token, 'Accept':'application/vnd.github.v3+json'}
-        });
-        if (!res.ok) throw new Error('API ' + res.status);
-        const json = await res.json();
-        _sha = json.sha;
-        _data = JSON.parse(b64decode(json.content));
-      } else {
-        const res = await fetch('data/tasks.json');
-        if (!res.ok) throw new Error('Fetch ' + res.status);
-        _data = await res.json();
-      }
+      const res = await sb('tasks?select=*&order=sort_order');
+      if (!res.ok) throw new Error('Load ' + res.status);
+      const rows = await res.json();
+      _data = rowsToData(rows);
       render();
     } catch(e) {
       root.innerHTML = '<p style="color:var(--signal);font-family:var(--mono);font-size:10px;margin-left:60px;">Could not load tasks: '+e.message+'</p>';
     }
   }
 
-  async function saveData() {
-    const token = getToken();
-    if (!token || !_data || !_sha) return;
-    setStatus('saving','Saving…');
-    _data.lastModified = new Date().toISOString().slice(0,10);
-    try {
-      const content = b64encode(JSON.stringify(_data, null, 2) + '\n');
-      const res = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + DATA_PATH, {
-        method: 'PUT',
-        headers: {'Authorization':'Bearer '+token, 'Content-Type':'application/json'},
-        body: JSON.stringify({ message:'Update tasks — '+_data.lastModified, content:content, sha:_sha })
+  function rowsToData(rows) {
+    const sections = SECTION_META.map(m => ({
+      id: m.id, num: m.num, name: m.name,
+      items: rows.filter(r => r.section === m.id).map(r => ({
+        id: r.id, text: r.text, priority: r.priority, note: r.note, order: r.sort_order
+      }))
+    }));
+    const bonus = rows.filter(r => r.section === 'bonus').map(r => ({
+      id: r.id, text: r.text, priority: 'bonus', note: r.note, order: r.sort_order
+    }));
+    return { sections, bonus };
+  }
+
+  function dataToRows() {
+    const rows = [];
+    _data.sections.forEach(sec => {
+      sec.items.forEach((item, i) => {
+        rows.push({id:item.id, section:sec.id, text:item.text, priority:item.priority, note:item.note||null, sort_order:i});
       });
-      if (!res.ok) throw new Error('Save ' + res.status);
-      const json = await res.json();
-      _sha = json.content.sha;
+    });
+    (_data.bonus||[]).forEach((item, i) => {
+      rows.push({id:item.id, section:'bonus', text:item.text, priority:'bonus', note:item.note||null, sort_order:i});
+    });
+    return rows;
+  }
+
+  async function saveData() {
+    if (!isConfigured()) return;
+    setStatus('saving','Saving…');
+    try {
+      const rows = dataToRows();
+      // Upsert all current tasks
+      const upsertRes = await sb('tasks', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify(rows)
+      });
+      if (!upsertRes.ok) throw new Error('Upsert ' + upsertRes.status);
+
+      // Delete removed tasks
+      if (_deletedIds.length) {
+        const ids = _deletedIds.map(id => '"'+id+'"').join(',');
+        const delRes = await sb('tasks?id=in.('+ids+')', { method: 'DELETE' });
+        if (!delRes.ok) throw new Error('Delete ' + delRes.status);
+        _deletedIds = [];
+      }
+
       setStatus('saved','Saved');
       setTimeout(() => setStatus('',''), 2000);
     } catch(e) {
@@ -2065,13 +2095,16 @@
   function removeItem(id) {
     _data.sections.forEach(sec => { sec.items = sec.items.filter(i => i.id !== id); });
     if (_data.bonus) _data.bonus = _data.bonus.filter(i => i.id !== id);
+    _deletedIds.push(id);
   }
 
   function moveItemToSection(id, targetSectionId, newPriority) {
     const found = findItem(id);
     if (!found) return;
     const itemData = {...found.item};
+    // Remove from deleted tracking since we're moving, not deleting
     removeItem(id);
+    _deletedIds = _deletedIds.filter(d => d !== id);
     if (targetSectionId === 'bonus') {
       itemData.priority = 'bonus';
       if (!_data.bonus) _data.bonus = [];
@@ -2087,7 +2120,6 @@
   /* ── Render ── */
   function render() {
     if (!_data) return;
-    const ed = isEditable();
     let html = '';
 
     _data.sections.forEach(sec => {
@@ -2106,55 +2138,44 @@
         if (!first) html += '<div class="tier-break"></div>';
         first = false;
         html += '<ul class="status-list" data-section="'+sec.id+'" data-priority="'+p+'">';
-        grouped[p].forEach(item => { html += renderItem(item, ed); });
+        grouped[p].forEach(item => { html += renderItem(item); });
         html += '</ul>';
       });
-      if (ed) html += '<button class="tracker-add" data-section="'+sec.id+'">+ add</button>';
+      html += '<button class="tracker-add" data-section="'+sec.id+'">+ add</button>';
     });
 
     // Bonus
     const bonusItems = (_data.bonus || []).slice().sort((a,b) => (a.order||0) - (b.order||0));
     html += '<div class="sub-head" data-section="bonus"><div class="sub-num">§ 08.4</div><div class="sub-name">Bonus</div></div>';
-    if (bonusItems.length || ed) {
-      html += '<ul class="status-list" data-section="bonus" data-priority="bonus">';
-      bonusItems.forEach(item => { html += renderItem(item, ed, true); });
-      html += '</ul>';
-      if (ed) html += '<button class="tracker-add" data-section="bonus">+ add</button>';
-    }
+    html += '<ul class="status-list" data-section="bonus" data-priority="bonus">';
+    bonusItems.forEach(item => { html += renderItem(item, true); });
+    html += '</ul>';
+    html += '<button class="tracker-add" data-section="bonus">+ add</button>';
 
     root.innerHTML = html;
-    if (ed) root.setAttribute('data-editable','');
-    else root.removeAttribute('data-editable');
+    root.setAttribute('data-editable','');
     bindEvents();
-    updateSetupBtn();
   }
 
-  function renderItem(item, editable, isBonus) {
+  function renderItem(item, isBonus) {
     const p = isBonus ? 'bonus' : item.priority;
     const mark = MARKS[p] || '○';
     const markCls = p + (p === 'done' ? ' done' : '');
     const noteHtml = item.note ? '<span class="item-note"> · '+esc(item.note)+'</span>' : '';
-    const controls = editable ? '<button class="item-menu-btn" data-id="'+item.id+'" title="More">⋮</button>' : '';
-    const drag = editable ? ' draggable="true"' : '';
-    return '<li data-item-id="'+item.id+'"'+drag+'><span class="mark '+markCls+'" data-id="'+item.id+'">'+mark+'</span><span class="item-wrap"><span class="item-text" data-id="'+item.id+'">'+esc(item.text)+'</span>'+noteHtml+controls+'</span></li>';
+    const controls = '<button class="item-menu-btn" data-id="'+item.id+'" title="More">⋮</button>';
+    return '<li data-item-id="'+item.id+'" draggable="true"><span class="mark '+markCls+'" data-id="'+item.id+'">'+mark+'</span><span class="item-wrap"><span class="item-text" data-id="'+item.id+'">'+esc(item.text)+'</span>'+noteHtml+controls+'</span></li>';
   }
 
   /* ── Events ── */
   function bindEvents() {
-    if (!isEditable()) return;
-
-    // Priority cycling (primary → secondary → done → primary)
+    // Priority cycling
     root.querySelectorAll('.mark[data-id]').forEach(el => {
       el.addEventListener('click', () => {
         const found = findItem(el.dataset.id);
         if (!found) return;
         snap();
         const idx = PRIORITY_CYCLE.indexOf(found.item.priority);
-        if (idx >= 0) {
-          found.item.priority = PRIORITY_CYCLE[(idx + 1) % PRIORITY_CYCLE.length];
-        } else {
-          found.item.priority = 'primary'; // bonus items clicking mark go to primary
-        }
+        found.item.priority = idx >= 0 ? PRIORITY_CYCLE[(idx+1)%PRIORITY_CYCLE.length] : 'primary';
         render();
         queueSave();
       });
@@ -2191,65 +2212,42 @@
       });
     });
 
-    // Context menu (⋮)
+    // Context menu
     root.querySelectorAll('.item-menu-btn').forEach(el => {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         closeMenu();
         const found = findItem(el.dataset.id);
         if (!found) return;
-        const currentSecId = found.section ? found.section.id : 'bonus';
-
+        const curSec = found.section ? found.section.id : 'bonus';
         const menu = document.createElement('div');
         menu.className = 'item-menu';
-
-        // Move options
-        SECTIONS.forEach(sec => {
-          if (sec.id === currentSecId) return;
+        const allSections = SECTION_META.map(s => ({id:s.id, label:s.name}));
+        allSections.push({id:'bonus', label:'Bonus'});
+        allSections.forEach(sec => {
+          if (sec.id === curSec) return;
           const btn = document.createElement('button');
           btn.textContent = '→ ' + sec.label;
-          btn.onclick = () => {
-            snap();
-            moveItemToSection(el.dataset.id, sec.id);
-            render();
-            queueSave();
-          };
+          btn.onclick = () => { snap(); moveItemToSection(el.dataset.id, sec.id); render(); queueSave(); };
           menu.appendChild(btn);
         });
-
-        // Add note
-        const divider = document.createElement('div');
-        divider.className = 'menu-divider';
-        menu.appendChild(divider);
+        let div = document.createElement('div'); div.className='menu-divider'; menu.appendChild(div);
         const noteBtn = document.createElement('button');
-        noteBtn.textContent = found.item.note ? 'Edit note: ' + found.item.note : '+ Add note';
+        noteBtn.textContent = found.item.note ? 'Edit note: '+found.item.note : '+ Add note';
         noteBtn.onclick = () => {
-          const val = prompt('Note (e.g. "Summer 2024"):', found.item.note || '');
-          if (val !== null) {
-            snap();
-            found.item.note = val || null;
-            render();
-            queueSave();
-          }
+          const val = prompt('Note (e.g. "Summer 2024"):', found.item.note||'');
+          if (val !== null) { snap(); found.item.note = val||null; render(); queueSave(); }
         };
         menu.appendChild(noteBtn);
-
-        // Delete
-        const divider2 = document.createElement('div');
-        divider2.className = 'menu-divider';
-        menu.appendChild(divider2);
+        div = document.createElement('div'); div.className='menu-divider'; menu.appendChild(div);
         const delBtn = document.createElement('button');
         delBtn.className = 'danger';
         delBtn.textContent = '× Delete';
         delBtn.onclick = () => {
-          if (!confirm('Remove "' + found.item.text.slice(0,40) + '…"?')) return;
-          snap();
-          removeItem(el.dataset.id);
-          render();
-          queueSave();
+          if (!confirm('Remove "'+found.item.text.slice(0,40)+'…"?')) return;
+          snap(); removeItem(el.dataset.id); render(); queueSave();
         };
         menu.appendChild(delBtn);
-
         el.closest('.item-wrap').appendChild(menu);
         _openMenu = menu;
       });
@@ -2277,21 +2275,16 @@
       });
     });
 
-    // Drag and drop
     bindDragDrop();
   }
 
-  function closeMenu() {
-    if (_openMenu) { _openMenu.remove(); _openMenu = null; }
-  }
+  function closeMenu() { if (_openMenu) { _openMenu.remove(); _openMenu = null; } }
   document.addEventListener('click', closeMenu);
 
   /* ── Drag & Drop ── */
   let _dragId = null;
-
   function bindDragDrop() {
-    const items = root.querySelectorAll('li[draggable]');
-    items.forEach(li => {
+    root.querySelectorAll('li[draggable]').forEach(li => {
       li.addEventListener('dragstart', (e) => {
         _dragId = li.dataset.itemId;
         li.classList.add('dragging');
@@ -2300,121 +2293,58 @@
       li.addEventListener('dragend', () => {
         _dragId = null;
         li.classList.remove('dragging');
-        root.querySelectorAll('.drag-over-above,.drag-over-below').forEach(el => {
-          el.classList.remove('drag-over-above','drag-over-below');
-        });
+        root.querySelectorAll('.drag-over-above,.drag-over-below').forEach(el => el.classList.remove('drag-over-above','drag-over-below'));
       });
       li.addEventListener('dragover', (e) => {
         e.preventDefault();
         if (li.dataset.itemId === _dragId) return;
         e.dataTransfer.dropEffect = 'move';
         const rect = li.getBoundingClientRect();
-        const midY = rect.top + rect.height / 2;
-        li.classList.toggle('drag-over-above', e.clientY < midY);
-        li.classList.toggle('drag-over-below', e.clientY >= midY);
+        const above = e.clientY < rect.top + rect.height/2;
+        li.classList.toggle('drag-over-above', above);
+        li.classList.toggle('drag-over-below', !above);
       });
-      li.addEventListener('dragleave', () => {
-        li.classList.remove('drag-over-above','drag-over-below');
-      });
+      li.addEventListener('dragleave', () => li.classList.remove('drag-over-above','drag-over-below'));
       li.addEventListener('drop', (e) => {
         e.preventDefault();
         li.classList.remove('drag-over-above','drag-over-below');
         if (!_dragId || li.dataset.itemId === _dragId) return;
-
         snap();
         const targetList = li.closest('.status-list');
         const targetSecId = targetList.dataset.section;
         const targetPriority = targetList.dataset.priority;
-        const rect = li.getBoundingClientRect();
-        const above = e.clientY < rect.top + rect.height / 2;
-
-        // Move the dragged item to this section/priority
+        const above = e.clientY < li.getBoundingClientRect().top + li.getBoundingClientRect().height/2;
         const found = findItem(_dragId);
         if (!found) return;
         const itemData = {...found.item};
-        removeItem(_dragId);
+        // Remove without adding to _deletedIds (it's a move)
+        _data.sections.forEach(sec => { sec.items = sec.items.filter(i => i.id !== _dragId); });
+        if (_data.bonus) _data.bonus = _data.bonus.filter(i => i.id !== _dragId);
 
-        // Find target section and insert near target item
         if (targetSecId === 'bonus') {
           itemData.priority = 'bonus';
           if (!_data.bonus) _data.bonus = [];
-          const targetIdx = _data.bonus.findIndex(i => i.id === li.dataset.itemId);
-          const insertIdx = above ? targetIdx : targetIdx + 1;
-          _data.bonus.splice(insertIdx, 0, itemData);
-          _data.bonus.forEach((it, i) => it.order = i);
+          const tIdx = _data.bonus.findIndex(i => i.id === li.dataset.itemId);
+          _data.bonus.splice(above ? tIdx : tIdx+1, 0, itemData);
+          _data.bonus.forEach((it,i) => it.order = i);
         } else {
           itemData.priority = targetPriority;
           const sec = _data.sections.find(s => s.id === targetSecId);
           if (!sec) return;
-          const sameP = sec.items.filter(i => i.priority === targetPriority);
-          const targetIdx = sameP.findIndex(i => i.id === li.dataset.itemId);
-          const insertOrder = above ? (sameP[targetIdx]?.order || 0) - 0.5 : (sameP[targetIdx]?.order || 0) + 0.5;
-          itemData.order = insertOrder;
-          sec.items.push(itemData);
-          // Re-normalize order
-          sec.items.filter(i => i.priority === targetPriority).sort((a,b) => a.order - b.order).forEach((it, i) => it.order = i);
+          const tIdx = sec.items.findIndex(i => i.id === li.dataset.itemId);
+          sec.items.splice(above ? tIdx : tIdx+1, 0, itemData);
+          sec.items.forEach((it,i) => it.order = i);
         }
-
         render();
         queueSave();
       });
     });
   }
 
-  /* ── Token setup ── */
-  function updateSetupBtn() {
-    if (getToken()) {
-      setupBtn.textContent = '✓ connected — edit live';
-      setupBtn.classList.add('connected');
-    } else {
-      setupBtn.textContent = 'connect GitHub to edit →';
-      setupBtn.classList.remove('connected');
-    }
-  }
-
-  setupBtn.addEventListener('click', () => {
-    const existing = getToken();
-    const overlay = document.createElement('div');
-    overlay.className = 'tracker-modal-overlay';
-    overlay.innerHTML =
-      '<div class="tracker-modal">' +
-        '<h3>GitHub Connection</h3>' +
-        '<p>Paste a GitHub personal access token with <strong>repo</strong> scope to enable editing. Token is stored in your browser only.</p>' +
-        '<p style="margin-top:8px;"><a href="https://github.com/settings/tokens/new?description=Yoshi+Dossier&scopes=repo" target="_blank" style="color:var(--signal);">Generate token →</a></p>' +
-        '<input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" value="' + (existing||'') + '">' +
-        '<div class="tracker-modal-buttons">' +
-          (existing ? '<button id="token-disconnect">Disconnect</button>' : '') +
-          '<button id="token-cancel">Cancel</button>' +
-          '<button id="token-save" class="primary-btn">Save</button>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('#token-cancel').onclick = () => overlay.remove();
-    overlay.querySelector('#token-save').onclick = () => {
-      const val = overlay.querySelector('#token-input').value.trim();
-      if (val) localStorage.setItem('yoshi-gh-token', val);
-      overlay.remove();
-      _sha = null;
-      loadData();
-    };
-    const disc = overlay.querySelector('#token-disconnect');
-    if (disc) disc.onclick = () => {
-      localStorage.removeItem('yoshi-gh-token');
-      overlay.remove();
-      _sha = null;
-      loadData();
-    };
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-  });
-
   /* ── Undo button + keyboard ── */
   undoBtn.addEventListener('click', undo);
   document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-      e.preventDefault();
-      undo();
-    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
   });
 
   /* ── Init ── */
