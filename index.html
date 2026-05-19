@@ -752,6 +752,42 @@
     border-color: var(--signal);
   }
 
+  /* ── Section inline editor ── */
+  .section-head { position: relative; }
+  .section-edit-btn {
+    position: absolute;
+    left: -44px;
+    top: 8px;
+    font-family: var(--mono);
+    font-size: 7px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    padding: 3px 5px;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .section-head:hover .section-edit-btn,
+  .section-edit-btn.active { opacity: 1; }
+  .section-edit-btn.active {
+    color: var(--done);
+    border-color: var(--done);
+  }
+  .section-edit-btn.cancel {
+    color: var(--ink-faint);
+    border-color: var(--rule);
+    left: -90px;
+  }
+  section.editing {
+    outline: 1px dashed var(--rule);
+    outline-offset: 8px;
+  }
+
   /* ── Drag & drop ── */
   [data-editable] .status-list li[draggable] {
     cursor: grab;
@@ -2349,6 +2385,143 @@
 
   /* ── Init ── */
   loadData();
+})();
+</script>
+
+<script>
+/* ─────────────────────────────────────────────
+   Section Inline Editor
+   Click EDIT on any § header to edit content.
+   Saves to Supabase section_content table.
+   ───────────────────────────────────────────── */
+(function() {
+  const URL = 'https://odhvdtlhgvrpxcxsuzke.supabase.co';
+  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kaHZkdGxoZ3ZycHhjeHN1emtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDAyNDgsImV4cCI6MjA5NDcxNjI0OH0.b3Df-ifRyqKECA2PV0cFHTj12KK6xMzaZu_w7xN99uU';
+  const headers = {'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};
+
+  let _originals = {};
+
+  // Find all sections and inject edit buttons
+  document.querySelectorAll('section.section').forEach(sec => {
+    const id = sec.id;
+    if (!id || id === 'sec-08') return; // § 08 has its own tracker
+    const head = sec.querySelector('.section-head');
+    if (!head) return;
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'section-edit-btn';
+    editBtn.textContent = 'edit';
+    head.appendChild(editBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'section-edit-btn cancel';
+    cancelBtn.textContent = '✕';
+    cancelBtn.style.display = 'none';
+    head.appendChild(cancelBtn);
+
+    editBtn.addEventListener('click', () => {
+      if (sec.classList.contains('editing')) {
+        // Save
+        saveSection(id, sec, editBtn, cancelBtn);
+      } else {
+        // Enter edit mode
+        _originals[id] = sec.innerHTML;
+        sec.contentEditable = 'true';
+        sec.classList.add('editing');
+        editBtn.textContent = 'save';
+        editBtn.classList.add('active');
+        cancelBtn.style.display = '';
+      }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      sec.innerHTML = _originals[id];
+      sec.contentEditable = 'false';
+      sec.classList.remove('editing');
+      // Re-inject buttons since innerHTML was restored
+      const newHead = sec.querySelector('.section-head');
+      if (newHead) {
+        newHead.appendChild(editBtn);
+        newHead.appendChild(cancelBtn);
+      }
+      editBtn.textContent = 'edit';
+      editBtn.classList.remove('active');
+      cancelBtn.style.display = 'none';
+    });
+  });
+
+  async function saveSection(id, sec, editBtn, cancelBtn) {
+    sec.contentEditable = 'false';
+    sec.classList.remove('editing');
+    editBtn.textContent = '…';
+    cancelBtn.style.display = 'none';
+    try {
+      const res = await fetch(URL+'/rest/v1/section_content', {
+        method: 'POST',
+        headers: Object.assign({}, headers, {'Prefer':'resolution=merge-duplicates,return=minimal'}),
+        body: JSON.stringify({id:id, html:sec.innerHTML, updated_at:new Date().toISOString()})
+      });
+      if (!res.ok) throw new Error(res.status);
+      editBtn.textContent = 'saved';
+      editBtn.classList.add('active');
+      setTimeout(() => { editBtn.textContent = 'edit'; editBtn.classList.remove('active'); }, 1500);
+    } catch(e) {
+      editBtn.textContent = 'error';
+      setTimeout(() => { editBtn.textContent = 'edit'; editBtn.classList.remove('active'); }, 2000);
+    }
+  }
+
+  // On load, apply any saved section content
+  async function loadSections() {
+    try {
+      const res = await fetch(URL+'/rest/v1/section_content?select=id,html', {headers:{'apikey':KEY}});
+      if (!res.ok) return;
+      const rows = await res.json();
+      rows.forEach(row => {
+        const sec = document.getElementById(row.id);
+        if (sec && row.id !== 'sec-08') {
+          sec.innerHTML = row.html;
+          // Re-inject edit buttons
+          const head = sec.querySelector('.section-head');
+          if (head) {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'section-edit-btn';
+            editBtn.textContent = 'edit';
+            head.appendChild(editBtn);
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'section-edit-btn cancel';
+            cancelBtn.textContent = '✕';
+            cancelBtn.style.display = 'none';
+            head.appendChild(cancelBtn);
+            editBtn.addEventListener('click', () => {
+              if (sec.classList.contains('editing')) {
+                saveSection(row.id, sec, editBtn, cancelBtn);
+              } else {
+                _originals[row.id] = sec.innerHTML;
+                sec.contentEditable = 'true';
+                sec.classList.add('editing');
+                editBtn.textContent = 'save';
+                editBtn.classList.add('active');
+                cancelBtn.style.display = '';
+              }
+            });
+            cancelBtn.addEventListener('click', () => {
+              sec.innerHTML = _originals[row.id];
+              sec.contentEditable = 'false';
+              sec.classList.remove('editing');
+              const newHead = sec.querySelector('.section-head');
+              if (newHead) { newHead.appendChild(editBtn); newHead.appendChild(cancelBtn); }
+              editBtn.textContent = 'edit';
+              editBtn.classList.remove('active');
+              cancelBtn.style.display = 'none';
+            });
+          }
+        }
+      });
+    } catch(e) { /* silent fail — static content still shows */ }
+  }
+
+  loadSections();
 })();
 </script>
 
