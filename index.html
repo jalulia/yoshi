@@ -752,6 +752,72 @@
     border-color: var(--signal);
   }
 
+  /* ── Drag & drop ── */
+  [data-editable] .status-list li[draggable] {
+    cursor: grab;
+  }
+  [data-editable] .status-list li[draggable]:active {
+    cursor: grabbing;
+  }
+  .status-list li.drag-over-above {
+    box-shadow: 0 -2px 0 0 var(--signal);
+  }
+  .status-list li.drag-over-below {
+    box-shadow: 0 2px 0 0 var(--signal);
+  }
+  .status-list li.dragging {
+    opacity: 0.3;
+  }
+  .sub-head.drag-over-section {
+    box-shadow: 0 2px 0 0 var(--signal);
+  }
+
+  /* ── Move menu ── */
+  .item-menu-btn {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-faint);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    line-height: 1;
+    vertical-align: baseline;
+    margin-left: 4px;
+  }
+  [data-editable] .status-list li:hover .item-menu-btn { opacity: 1; }
+  .item-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #faf8f3;
+    border: 1px solid var(--rule);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    z-index: 100;
+    min-width: 180px;
+    padding: 4px 0;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+  .item-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 6px 14px;
+    border: none;
+    background: none;
+    font: inherit;
+    letter-spacing: inherit;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .item-menu button:hover { background: var(--signal-soft); }
+  .item-menu button.danger { color: var(--signal); }
+  .item-menu .menu-divider { border-top: 1px solid var(--rule); margin: 4px 0; }
+
   .tracker-modal-overlay {
     position: fixed;
     inset: 0;
@@ -1803,6 +1869,7 @@
       <p class="lead">Outstanding work, organized by stream and priority. <strong>Primary</strong> is the current focus; <strong>Secondary</strong> follows. Completed items retained at the bottom of each section for build history. <strong>Bonus</strong> is a catchall for nice-to-haves across all streams.</p>
       <div class="tracker-controls">
         <span id="tracker-status" class="status"></span>
+        <button id="tracker-undo" class="setup-link" style="display:none;" title="Undo (Ctrl+Z)">↩ undo</button>
         <button id="tracker-setup" class="setup-link" title="GitHub settings">connect GitHub to edit →</button>
       </div>
     </div>
@@ -1864,38 +1931,82 @@
 
 <script>
 /* ─────────────────────────────────────────────
-   § 08 Live Tracker
+   § 08 Live Tracker v2
    Reads/writes data/tasks.json via GitHub API
+   Undo · Drag-drop · UTF-8 safe
    ───────────────────────────────────────────── */
 (function() {
   const REPO = 'jalulia/yoshi';
   const DATA_PATH = 'data/tasks.json';
   const PRIORITY_ORDER = ['primary','secondary','done'];
-  const PRIORITY_CYCLE = ['primary','secondary','done','bonus'];
+  const PRIORITY_CYCLE = ['primary','secondary','done']; // no bonus — bonus is set via menu only
   const MARKS = { primary:'○', secondary:'○', done:'✓', bonus:'○' };
+  const SECTIONS = [
+    {id:'exterior', label:'Exterior & body'},
+    {id:'interior', label:'Interior & cabinetry'},
+    {id:'yoshios',  label:'YoshiOS'},
+    {id:'bonus',    label:'Bonus'}
+  ];
 
-  let _data = null;
-  let _sha = null;
-  let _saveTimer = null;
+  let _data = null, _sha = null, _saveTimer = null;
+  let _history = [], _openMenu = null;
+  const MAX_UNDO = 50;
+
   const root = document.getElementById('tracker-root');
   const statusEl = document.getElementById('tracker-status');
   const setupBtn = document.getElementById('tracker-setup');
+  const undoBtn = document.getElementById('tracker-undo');
 
   function getToken() { return localStorage.getItem('yoshi-gh-token'); }
   function isEditable() { return !!getToken(); }
+
+  /* ── UTF-8–safe base64 ── */
+  function b64decode(str) {
+    const bin = atob(str);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  function b64encode(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    bytes.forEach(b => bin += String.fromCharCode(b));
+    return btoa(bin);
+  }
+
+  /* ── Undo ── */
+  function snap() {
+    _history.push(JSON.stringify(_data));
+    if (_history.length > MAX_UNDO) _history.shift();
+    undoBtn.style.display = '';
+  }
+  function undo() {
+    if (!_history.length) return;
+    _data = JSON.parse(_history.pop());
+    if (!_history.length) undoBtn.style.display = 'none';
+    render();
+    queueSave();
+    setStatus('saving','Undone — saving…');
+  }
+
+  /* ── Status ── */
+  function setStatus(cls, text) {
+    statusEl.className = 'status ' + cls;
+    statusEl.textContent = text;
+  }
 
   /* ── Data I/O ── */
   async function loadData() {
     const token = getToken();
     try {
       if (token) {
-        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${DATA_PATH}`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+        const res = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + DATA_PATH, {
+          headers: {'Authorization':'Bearer '+token, 'Accept':'application/vnd.github.v3+json'}
         });
         if (!res.ok) throw new Error('API ' + res.status);
         const json = await res.json();
         _sha = json.sha;
-        _data = JSON.parse(atob(json.content));
+        _data = JSON.parse(b64decode(json.content));
       } else {
         const res = await fetch('data/tasks.json');
         if (!res.ok) throw new Error('Fetch ' + res.status);
@@ -1903,33 +2014,29 @@
       }
       render();
     } catch(e) {
-      root.innerHTML = '<p style="color:var(--signal);font-family:var(--mono);font-size:10px;margin-left:60px;">Could not load tasks: ' + e.message + '</p>';
+      root.innerHTML = '<p style="color:var(--signal);font-family:var(--mono);font-size:10px;margin-left:60px;">Could not load tasks: '+e.message+'</p>';
     }
   }
 
   async function saveData() {
     const token = getToken();
     if (!token || !_data || !_sha) return;
-    setStatus('saving', 'Saving…');
+    setStatus('saving','Saving…');
     _data.lastModified = new Date().toISOString().slice(0,10);
     try {
-      const content = btoa(unescape(encodeURIComponent(JSON.stringify(_data, null, 2) + '\n')));
-      const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${DATA_PATH}`, {
+      const content = b64encode(JSON.stringify(_data, null, 2) + '\n');
+      const res = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + DATA_PATH, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: 'Update tasks — ' + _data.lastModified,
-          content: content,
-          sha: _sha
-        })
+        headers: {'Authorization':'Bearer '+token, 'Content-Type':'application/json'},
+        body: JSON.stringify({ message:'Update tasks — '+_data.lastModified, content:content, sha:_sha })
       });
       if (!res.ok) throw new Error('Save ' + res.status);
       const json = await res.json();
       _sha = json.content.sha;
-      setStatus('saved', 'Saved');
+      setStatus('saved','Saved');
       setTimeout(() => setStatus('',''), 2000);
     } catch(e) {
-      setStatus('error', 'Save failed: ' + e.message);
+      setStatus('error','Save failed: '+e.message);
     }
   }
 
@@ -1938,74 +2045,85 @@
     _saveTimer = setTimeout(saveData, 800);
   }
 
-  function setStatus(cls, text) {
-    statusEl.className = 'status ' + cls;
-    statusEl.textContent = text;
+  function newId(prefix) { return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+  /* ── Helpers ── */
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function findItem(id) {
+    for (const sec of _data.sections) {
+      const item = sec.items.find(i => i.id === id);
+      if (item) return {item, section: sec};
+    }
+    if (_data.bonus) {
+      const item = _data.bonus.find(i => i.id === id);
+      if (item) return {item, section: null};
+    }
+    return null;
   }
 
-  /* ── Generate unique ID ── */
-  function newId(prefix) {
-    return prefix + '-' + Date.now().toString(36);
+  function removeItem(id) {
+    _data.sections.forEach(sec => { sec.items = sec.items.filter(i => i.id !== id); });
+    if (_data.bonus) _data.bonus = _data.bonus.filter(i => i.id !== id);
+  }
+
+  function moveItemToSection(id, targetSectionId, newPriority) {
+    const found = findItem(id);
+    if (!found) return;
+    const itemData = {...found.item};
+    removeItem(id);
+    if (targetSectionId === 'bonus') {
+      itemData.priority = 'bonus';
+      if (!_data.bonus) _data.bonus = [];
+      _data.bonus.push(itemData);
+    } else {
+      if (newPriority) itemData.priority = newPriority;
+      else if (itemData.priority === 'bonus') itemData.priority = 'primary';
+      const sec = _data.sections.find(s => s.id === targetSectionId);
+      if (sec) { itemData.order = sec.items.length; sec.items.push(itemData); }
+    }
   }
 
   /* ── Render ── */
   function render() {
     if (!_data) return;
-    const editable = isEditable();
+    const ed = isEditable();
     let html = '';
 
     _data.sections.forEach(sec => {
-      html += `<div class="sub-head"><div class="sub-num">§ ${sec.num}</div><div class="sub-name">${esc(sec.name)}</div></div>`;
-
+      html += '<div class="sub-head" data-section="'+sec.id+'"><div class="sub-num">§ '+sec.num+'</div><div class="sub-name">'+esc(sec.name)+'</div></div>';
       const grouped = {};
       PRIORITY_ORDER.forEach(p => grouped[p] = []);
       sec.items.forEach(item => {
-        if (item.priority === 'bonus') return;
-        if (!grouped[item.priority]) grouped[item.priority] = [];
-        grouped[item.priority].push(item);
+        const p = PRIORITY_ORDER.includes(item.priority) ? item.priority : 'primary';
+        grouped[p].push(item);
       });
-      PRIORITY_ORDER.forEach(p => grouped[p].sort((a,b) => a.order - b.order));
+      PRIORITY_ORDER.forEach(p => grouped[p].sort((a,b) => (a.order||0) - (b.order||0)));
 
       let first = true;
       PRIORITY_ORDER.forEach(p => {
-        if (grouped[p].length === 0) return;
+        if (!grouped[p].length) return;
         if (!first) html += '<div class="tier-break"></div>';
         first = false;
-        html += '<ul class="status-list">';
-        grouped[p].forEach(item => {
-          html += renderItem(item, editable);
-        });
+        html += '<ul class="status-list" data-section="'+sec.id+'" data-priority="'+p+'">';
+        grouped[p].forEach(item => { html += renderItem(item, ed); });
         html += '</ul>';
       });
-
-      if (editable) {
-        html += `<button class="tracker-add" data-section="${sec.id}">+ add</button>`;
-      }
+      if (ed) html += '<button class="tracker-add" data-section="'+sec.id+'">+ add</button>';
     });
 
-    // Bonus section
-    const bonusItems = (_data.bonus || []).slice().sort((a,b) => a.order - b.order);
-    // Also gather any items tagged bonus from sections
-    _data.sections.forEach(sec => {
-      sec.items.forEach(item => {
-        if (item.priority === 'bonus') bonusItems.push(item);
-      });
-    });
-
-    if (bonusItems.length > 0 || editable) {
-      html += '<div class="sub-head"><div class="sub-num">§ 08.4</div><div class="sub-name">Bonus</div></div>';
-      html += '<ul class="status-list">';
-      bonusItems.forEach(item => {
-        html += renderItem(item, editable, true);
-      });
+    // Bonus
+    const bonusItems = (_data.bonus || []).slice().sort((a,b) => (a.order||0) - (b.order||0));
+    html += '<div class="sub-head" data-section="bonus"><div class="sub-num">§ 08.4</div><div class="sub-name">Bonus</div></div>';
+    if (bonusItems.length || ed) {
+      html += '<ul class="status-list" data-section="bonus" data-priority="bonus">';
+      bonusItems.forEach(item => { html += renderItem(item, ed, true); });
       html += '</ul>';
-      if (editable) {
-        html += `<button class="tracker-add" data-section="bonus">+ add</button>`;
-      }
+      if (ed) html += '<button class="tracker-add" data-section="bonus">+ add</button>';
     }
 
     root.innerHTML = html;
-    if (editable) root.setAttribute('data-editable','');
+    if (ed) root.setAttribute('data-editable','');
     else root.removeAttribute('data-editable');
     bindEvents();
     updateSetupBtn();
@@ -2015,53 +2133,39 @@
     const p = isBonus ? 'bonus' : item.priority;
     const mark = MARKS[p] || '○';
     const markCls = p + (p === 'done' ? ' done' : '');
-    const noteHtml = item.note ? `<span class="item-note"> · ${esc(item.note)}</span>` : '';
-    const delBtn = editable ? '<button class="item-delete" data-id="' + item.id + '" title="Remove">×</button>' : '';
-    return `<li data-item-id="${item.id}"><span class="mark ${markCls}" data-id="${item.id}">${mark}</span><span class="item-wrap"><span class="item-text" data-id="${item.id}">${esc(item.text)}</span>${noteHtml}${delBtn}</span></li>`;
-  }
-
-  function esc(s) {
-    const d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
+    const noteHtml = item.note ? '<span class="item-note"> · '+esc(item.note)+'</span>' : '';
+    const controls = editable ? '<button class="item-menu-btn" data-id="'+item.id+'" title="More">⋮</button>' : '';
+    const drag = editable ? ' draggable="true"' : '';
+    return '<li data-item-id="'+item.id+'"'+drag+'><span class="mark '+markCls+'" data-id="'+item.id+'">'+mark+'</span><span class="item-wrap"><span class="item-text" data-id="'+item.id+'">'+esc(item.text)+'</span>'+noteHtml+controls+'</span></li>';
   }
 
   /* ── Events ── */
   function bindEvents() {
     if (!isEditable()) return;
 
-    // Cycle priority on mark click
+    // Priority cycling (primary → secondary → done → primary)
     root.querySelectorAll('.mark[data-id]').forEach(el => {
       el.addEventListener('click', () => {
-        const item = findItem(el.dataset.id);
-        if (!item) return;
-        const idx = PRIORITY_CYCLE.indexOf(item.priority);
-        item.priority = PRIORITY_CYCLE[(idx + 1) % PRIORITY_CYCLE.length];
-
-        // If cycled to bonus, move to bonus array
-        if (item.priority === 'bonus') {
-          removeItemFromSection(item.id);
-          if (!_data.bonus) _data.bonus = [];
-          _data.bonus.push({id: item.id, text: item.text, note: item.note, order: _data.bonus.length});
+        const found = findItem(el.dataset.id);
+        if (!found) return;
+        snap();
+        const idx = PRIORITY_CYCLE.indexOf(found.item.priority);
+        if (idx >= 0) {
+          found.item.priority = PRIORITY_CYCLE[(idx + 1) % PRIORITY_CYCLE.length];
+        } else {
+          found.item.priority = 'primary'; // bonus items clicking mark go to primary
         }
-        // If was in bonus and cycled away, move to first section
-        const inBonus = (_data.bonus || []).find(b => b.id === item.id);
-        if (inBonus && item.priority !== 'bonus') {
-          _data.bonus = _data.bonus.filter(b => b.id !== item.id);
-          _data.sections[0].items.push({id: item.id, text: item.text, note: item.note, priority: item.priority, order: 999});
-        }
-
         render();
         queueSave();
       });
     });
 
-    // Inline edit on text click
+    // Inline edit
     root.querySelectorAll('.item-text[data-id]').forEach(el => {
-      el.addEventListener('click', () => {
-        el.setAttribute('contenteditable', 'true');
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        el.setAttribute('contenteditable','true');
         el.focus();
-        // Select all text
         const range = document.createRange();
         range.selectNodeContents(el);
         const sel = window.getSelection();
@@ -2070,72 +2174,190 @@
       });
       el.addEventListener('blur', () => {
         el.removeAttribute('contenteditable');
-        const item = findItem(el.dataset.id);
-        if (item && el.textContent.trim() !== item.text) {
-          item.text = el.textContent.trim();
+        const found = findItem(el.dataset.id);
+        if (found && el.textContent.trim() !== found.item.text) {
+          snap();
+          found.item.text = el.textContent.trim();
           queueSave();
         }
       });
       el.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
         if (e.key === 'Escape') {
-          const item = findItem(el.dataset.id);
-          if (item) el.textContent = item.text;
+          const found = findItem(el.dataset.id);
+          if (found) el.textContent = found.item.text;
           el.blur();
         }
       });
     });
 
-    // Delete buttons
-    root.querySelectorAll('.item-delete[data-id]').forEach(el => {
-      el.addEventListener('click', () => {
-        const item = findItem(el.dataset.id);
-        if (!item) return;
-        if (!confirm('Remove "' + item.text.slice(0,50) + '…"?')) return;
-        removeItemFromSection(el.dataset.id);
-        if (_data.bonus) _data.bonus = _data.bonus.filter(b => b.id !== el.dataset.id);
-        render();
-        queueSave();
+    // Context menu (⋮)
+    root.querySelectorAll('.item-menu-btn').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeMenu();
+        const found = findItem(el.dataset.id);
+        if (!found) return;
+        const currentSecId = found.section ? found.section.id : 'bonus';
+
+        const menu = document.createElement('div');
+        menu.className = 'item-menu';
+
+        // Move options
+        SECTIONS.forEach(sec => {
+          if (sec.id === currentSecId) return;
+          const btn = document.createElement('button');
+          btn.textContent = '→ ' + sec.label;
+          btn.onclick = () => {
+            snap();
+            moveItemToSection(el.dataset.id, sec.id);
+            render();
+            queueSave();
+          };
+          menu.appendChild(btn);
+        });
+
+        // Add note
+        const divider = document.createElement('div');
+        divider.className = 'menu-divider';
+        menu.appendChild(divider);
+        const noteBtn = document.createElement('button');
+        noteBtn.textContent = found.item.note ? 'Edit note: ' + found.item.note : '+ Add note';
+        noteBtn.onclick = () => {
+          const val = prompt('Note (e.g. "Summer 2024"):', found.item.note || '');
+          if (val !== null) {
+            snap();
+            found.item.note = val || null;
+            render();
+            queueSave();
+          }
+        };
+        menu.appendChild(noteBtn);
+
+        // Delete
+        const divider2 = document.createElement('div');
+        divider2.className = 'menu-divider';
+        menu.appendChild(divider2);
+        const delBtn = document.createElement('button');
+        delBtn.className = 'danger';
+        delBtn.textContent = '× Delete';
+        delBtn.onclick = () => {
+          if (!confirm('Remove "' + found.item.text.slice(0,40) + '…"?')) return;
+          snap();
+          removeItem(el.dataset.id);
+          render();
+          queueSave();
+        };
+        menu.appendChild(delBtn);
+
+        el.closest('.item-wrap').appendChild(menu);
+        _openMenu = menu;
       });
     });
 
     // Add buttons
     root.querySelectorAll('.tracker-add').forEach(btn => {
       btn.addEventListener('click', () => {
+        snap();
         const secId = btn.dataset.section;
-        const newItem = { id: newId(secId.slice(0,3)), text: 'New item', note: null, priority: 'primary', order: 999 };
+        const id = newId(secId.slice(0,3));
+        const newItem = {id:id, text:'New item', note:null, priority:'primary', order:999};
         if (secId === 'bonus') {
-          if (!_data.bonus) _data.bonus = [];
           newItem.priority = 'bonus';
+          if (!_data.bonus) _data.bonus = [];
           _data.bonus.push(newItem);
         } else {
           const sec = _data.sections.find(s => s.id === secId);
           if (sec) sec.items.push(newItem);
         }
         render();
-        // Focus the new item for editing
-        const el = root.querySelector(`.item-text[data-id="${newItem.id}"]`);
-        if (el) { el.click(); }
+        const el = root.querySelector('.item-text[data-id="'+id+'"]');
+        if (el) el.click();
         queueSave();
       });
     });
+
+    // Drag and drop
+    bindDragDrop();
   }
 
-  function findItem(id) {
-    for (const sec of _data.sections) {
-      const item = sec.items.find(i => i.id === id);
-      if (item) return item;
-    }
-    if (_data.bonus) {
-      const item = _data.bonus.find(i => i.id === id);
-      if (item) return item;
-    }
-    return null;
+  function closeMenu() {
+    if (_openMenu) { _openMenu.remove(); _openMenu = null; }
   }
+  document.addEventListener('click', closeMenu);
 
-  function removeItemFromSection(id) {
-    _data.sections.forEach(sec => {
-      sec.items = sec.items.filter(i => i.id !== id);
+  /* ── Drag & Drop ── */
+  let _dragId = null;
+
+  function bindDragDrop() {
+    const items = root.querySelectorAll('li[draggable]');
+    items.forEach(li => {
+      li.addEventListener('dragstart', (e) => {
+        _dragId = li.dataset.itemId;
+        li.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      li.addEventListener('dragend', () => {
+        _dragId = null;
+        li.classList.remove('dragging');
+        root.querySelectorAll('.drag-over-above,.drag-over-below').forEach(el => {
+          el.classList.remove('drag-over-above','drag-over-below');
+        });
+      });
+      li.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (li.dataset.itemId === _dragId) return;
+        e.dataTransfer.dropEffect = 'move';
+        const rect = li.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        li.classList.toggle('drag-over-above', e.clientY < midY);
+        li.classList.toggle('drag-over-below', e.clientY >= midY);
+      });
+      li.addEventListener('dragleave', () => {
+        li.classList.remove('drag-over-above','drag-over-below');
+      });
+      li.addEventListener('drop', (e) => {
+        e.preventDefault();
+        li.classList.remove('drag-over-above','drag-over-below');
+        if (!_dragId || li.dataset.itemId === _dragId) return;
+
+        snap();
+        const targetList = li.closest('.status-list');
+        const targetSecId = targetList.dataset.section;
+        const targetPriority = targetList.dataset.priority;
+        const rect = li.getBoundingClientRect();
+        const above = e.clientY < rect.top + rect.height / 2;
+
+        // Move the dragged item to this section/priority
+        const found = findItem(_dragId);
+        if (!found) return;
+        const itemData = {...found.item};
+        removeItem(_dragId);
+
+        // Find target section and insert near target item
+        if (targetSecId === 'bonus') {
+          itemData.priority = 'bonus';
+          if (!_data.bonus) _data.bonus = [];
+          const targetIdx = _data.bonus.findIndex(i => i.id === li.dataset.itemId);
+          const insertIdx = above ? targetIdx : targetIdx + 1;
+          _data.bonus.splice(insertIdx, 0, itemData);
+          _data.bonus.forEach((it, i) => it.order = i);
+        } else {
+          itemData.priority = targetPriority;
+          const sec = _data.sections.find(s => s.id === targetSecId);
+          if (!sec) return;
+          const sameP = sec.items.filter(i => i.priority === targetPriority);
+          const targetIdx = sameP.findIndex(i => i.id === li.dataset.itemId);
+          const insertOrder = above ? (sameP[targetIdx]?.order || 0) - 0.5 : (sameP[targetIdx]?.order || 0) + 0.5;
+          itemData.order = insertOrder;
+          sec.items.push(itemData);
+          // Re-normalize order
+          sec.items.filter(i => i.priority === targetPriority).sort((a,b) => a.order - b.order).forEach((it, i) => it.order = i);
+        }
+
+        render();
+        queueSave();
+      });
     });
   }
 
@@ -2154,18 +2376,18 @@
     const existing = getToken();
     const overlay = document.createElement('div');
     overlay.className = 'tracker-modal-overlay';
-    overlay.innerHTML = `
-      <div class="tracker-modal">
-        <h3>GitHub Connection</h3>
-        <p>Paste a GitHub personal access token with <strong>repo</strong> scope to enable editing. Token is stored in your browser only — never sent anywhere except GitHub's API.</p>
-        <p style="margin-top:8px;"><a href="https://github.com/settings/tokens/new?description=Yoshi+Dossier&scopes=repo" target="_blank" style="color:var(--signal);">Generate token →</a></p>
-        <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" value="${existing || ''}">
-        <div class="tracker-modal-buttons">
-          ${existing ? '<button id="token-disconnect">Disconnect</button>' : ''}
-          <button id="token-cancel">Cancel</button>
-          <button id="token-save" class="primary-btn">Save</button>
-        </div>
-      </div>`;
+    overlay.innerHTML =
+      '<div class="tracker-modal">' +
+        '<h3>GitHub Connection</h3>' +
+        '<p>Paste a GitHub personal access token with <strong>repo</strong> scope to enable editing. Token is stored in your browser only.</p>' +
+        '<p style="margin-top:8px;"><a href="https://github.com/settings/tokens/new?description=Yoshi+Dossier&scopes=repo" target="_blank" style="color:var(--signal);">Generate token →</a></p>' +
+        '<input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" value="' + (existing||'') + '">' +
+        '<div class="tracker-modal-buttons">' +
+          (existing ? '<button id="token-disconnect">Disconnect</button>' : '') +
+          '<button id="token-cancel">Cancel</button>' +
+          '<button id="token-save" class="primary-btn">Save</button>' +
+        '</div>' +
+      '</div>';
     document.body.appendChild(overlay);
 
     overlay.querySelector('#token-cancel').onclick = () => overlay.remove();
@@ -2176,14 +2398,23 @@
       _sha = null;
       loadData();
     };
-    const discBtn = overlay.querySelector('#token-disconnect');
-    if (discBtn) discBtn.onclick = () => {
+    const disc = overlay.querySelector('#token-disconnect');
+    if (disc) disc.onclick = () => {
       localStorage.removeItem('yoshi-gh-token');
       overlay.remove();
       _sha = null;
       loadData();
     };
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  });
+
+  /* ── Undo button + keyboard ── */
+  undoBtn.addEventListener('click', undo);
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      e.preventDefault();
+      undo();
+    }
   });
 
   /* ── Init ── */
