@@ -667,16 +667,18 @@
   .tracker-controls .status.saving { color: var(--amber); }
   .tracker-controls .status.error { color: var(--signal); }
   .tracker-controls .setup-link {
-    color: var(--ink-faint);
+    color: var(--signal);
     text-decoration: none;
     cursor: pointer;
     border: none;
+    border-bottom: 1px solid var(--signal);
     background: none;
     font: inherit;
     letter-spacing: inherit;
-    padding: 0;
+    padding: 0 0 1px;
   }
-  .tracker-controls .setup-link:hover { color: var(--ink-mid); }
+  .tracker-controls .setup-link:hover { color: var(--ink); border-color: var(--ink); }
+  .tracker-controls .setup-link.connected { color: var(--done); border-color: var(--done); }
 
   .status-list li {
     position: relative;
@@ -709,21 +711,21 @@
     letter-spacing: 0.06em;
     margin-left: 6px;
   }
+  .item-wrap { position: relative; }
   [data-editable] .item-delete {
-    position: absolute;
-    right: -24px;
-    top: 50%;
-    transform: translateY(-50%);
+    display: inline;
+    margin-left: 8px;
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 11px;
     color: var(--ink-faint);
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.15s, color 0.15s;
     background: none;
     border: none;
-    padding: 4px;
+    padding: 2px 4px;
     line-height: 1;
+    vertical-align: baseline;
   }
   [data-editable] .status-list li:hover .item-delete { opacity: 1; }
   [data-editable] .item-delete:hover { color: var(--signal); }
@@ -753,22 +755,24 @@
   .tracker-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(28,26,14,0.65);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
   }
   .tracker-modal {
-    background: var(--page);
+    background: #faf8f3;
     border: 1px solid var(--rule);
-    padding: 32px;
-    max-width: 440px;
+    padding: 36px 32px 28px;
+    max-width: 420px;
     width: 90%;
     font-family: var(--body);
-    font-size: 11px;
-    line-height: 1.6;
+    font-size: 12px;
+    line-height: 1.7;
     color: var(--ink);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
   }
   .tracker-modal h3 {
     font-family: var(--mono);
@@ -1799,7 +1803,7 @@
       <p class="lead">Outstanding work, organized by stream and priority. <strong>Primary</strong> is the current focus; <strong>Secondary</strong> follows. Completed items retained at the bottom of each section for build history. <strong>Bonus</strong> is a catchall for nice-to-haves across all streams.</p>
       <div class="tracker-controls">
         <span id="tracker-status" class="status"></span>
-        <button id="tracker-setup" class="setup-link" title="GitHub settings">⚙ connect</button>
+        <button id="tracker-setup" class="setup-link" title="GitHub settings">connect GitHub to edit →</button>
       </div>
     </div>
 
@@ -2011,9 +2015,9 @@
     const p = isBonus ? 'bonus' : item.priority;
     const mark = MARKS[p] || '○';
     const markCls = p + (p === 'done' ? ' done' : '');
-    const noteHtml = item.note ? ` <span class="item-note">· ${esc(item.note)}</span>` : '';
+    const noteHtml = item.note ? `<span class="item-note"> · ${esc(item.note)}</span>` : '';
     const delBtn = editable ? '<button class="item-delete" data-id="' + item.id + '" title="Remove">×</button>' : '';
-    return `<li data-item-id="${item.id}"><span class="mark ${markCls}" data-id="${item.id}">${mark}</span><span class="item-text" data-id="${item.id}">${esc(item.text)}</span>${noteHtml}${delBtn}</li>`;
+    return `<li data-item-id="${item.id}"><span class="mark ${markCls}" data-id="${item.id}">${mark}</span><span class="item-wrap"><span class="item-text" data-id="${item.id}">${esc(item.text)}</span>${noteHtml}${delBtn}</span></li>`;
   }
 
   function esc(s) {
@@ -2137,7 +2141,13 @@
 
   /* ── Token setup ── */
   function updateSetupBtn() {
-    setupBtn.textContent = getToken() ? '⚙ connected' : '⚙ connect';
+    if (getToken()) {
+      setupBtn.textContent = '✓ connected — edit live';
+      setupBtn.classList.add('connected');
+    } else {
+      setupBtn.textContent = 'connect GitHub to edit →';
+      setupBtn.classList.remove('connected');
+    }
   }
 
   setupBtn.addEventListener('click', () => {
