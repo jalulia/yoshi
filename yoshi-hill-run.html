@@ -146,15 +146,16 @@ const YOSHI_DIST = 600;  // distance to trigger
 const YOSHI_WARN = 500;  // warning distance
 
 function init() {
-  van = { x: W() / 2, y: H() * 0.25, w: 46, h: 64, vx: 0 };
+  van = { x: W() / 2, y: H() * 0.25, w: 39, h: 54, vx: 0 };
   obs = []; pix = []; parts = []; dust = [];
   spd = 2.5; dist = 0; fuel = 100; tilt = 0; inv = 0; shakeT = 0; frame = 0;
   yoshi = null; yoshiWarned = false; yoshiActive = false; yoshiAte = false;
   wBan.classList.remove('show');
 
-  // pre-populate terrain below the van
-  for (let i = 0; i < 30; i++) {
-    spawnTerrain(van.y + 80 + Math.random() * (H() - van.y + 200));
+  // pre-populate terrain — safe zone: nothing spawns within 220px below van
+  const safeY = van.y + 220;
+  for (let i = 0; i < 16; i++) {
+    spawnTerrain(safeY + Math.random() * (H() - safeY + 300));
   }
 }
 
@@ -165,27 +166,27 @@ function spawnTerrain(atY) {
   const y = atY !== undefined ? atY : H() + 20 + Math.random() * 60;
   const r = Math.random();
 
-  if (r < 0.45) {
+  if (r < 0.35) {
     // evergreen tree
     const s = 0.7 + Math.random() * 0.7;
     obs.push({ t:'tree', x: 30 + Math.random() * (w - 60), y, s, hw: 10 * s, hh: 14 * s });
-  } else if (r < 0.7) {
+  } else if (r < 0.55) {
     // rock
     const s = 0.6 + Math.random() * 0.6;
     obs.push({ t:'rock', x: 40 + Math.random() * (w - 80), y, s, hw: 9 * s, hh: 8 * s });
-  } else if (r < 0.82) {
-    // tree cluster (2-3 trees close together)
+  } else if (r < 0.65) {
+    // tree cluster (2 trees close together)
     const bx = 60 + Math.random() * (w - 120);
-    for (let i = 0; i < 2 + Math.floor(Math.random() * 2); i++) {
+    for (let i = 0; i < 2; i++) {
       const s = 0.6 + Math.random() * 0.5;
-      obs.push({ t:'tree', x: bx + (Math.random() - 0.5) * 50, y: y + (Math.random() - 0.5) * 30, s, hw: 10 * s, hh: 14 * s });
+      obs.push({ t:'tree', x: bx + (Math.random() - 0.5) * 60, y: y + (Math.random() - 0.5) * 35, s, hw: 10 * s, hh: 14 * s });
     }
-  } else if (r < 0.92) {
+  } else if (r < 0.72) {
     // boulder cluster
     const bx = 50 + Math.random() * (w - 100);
     for (let i = 0; i < 2; i++) {
       const s = 0.5 + Math.random() * 0.4;
-      obs.push({ t:'rock', x: bx + (Math.random() - 0.5) * 40, y: y + (Math.random() - 0.5) * 20, s, hw: 9 * s, hh: 8 * s });
+      obs.push({ t:'rock', x: bx + (Math.random() - 0.5) * 45, y: y + (Math.random() - 0.5) * 25, s, hw: 9 * s, hh: 8 * s });
     }
   } else {
     // small bush / shrub (no collision, decoration)
@@ -203,6 +204,7 @@ function spawnPickup() {
 
 function drawVan(x, y, lean) {
   cx.save(); cx.translate(x, y); cx.rotate(lean * 0.025);
+  cx.scale(0.85, 0.85);  // 15% smaller
   const w = 21, h = 33;
 
   // shadow
@@ -477,10 +479,11 @@ function update() {
   obs = obs.filter(o => o.y > -60);
   pix = pix.filter(p => p.y > -30 && !p.dead);
 
-  // spawn new terrain at the bottom
+  // spawn new terrain at the bottom (sparser)
   const bottomMost = obs.length ? Math.max(...obs.map(o => o.y)) : 0;
-  if (bottomMost < h + 40) {
-    for (let i = 0; i < 3; i++) spawnTerrain(h + 20 + Math.random() * 120);
+  if (bottomMost < h + 60) {
+    spawnTerrain(h + 30 + Math.random() * 160);
+    if (Math.random() < .45) spawnTerrain(h + 80 + Math.random() * 160);
   }
 
   // pickups
@@ -548,8 +551,8 @@ function update() {
 
   // dust behind van (going upward since van descends)
   if (spd > 3 && Math.random() < .35) {
-    addDust(van.x - 16, van.y - 34);
-    addDust(van.x + 16, van.y - 34);
+    addDust(van.x - 14, van.y - 30);
+    addDust(van.x + 14, van.y - 30);
   }
 
   // particles
