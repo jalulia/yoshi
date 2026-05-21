@@ -1079,12 +1079,13 @@
   /* ── Block insertion points (Phase 4) ── */
   .add-point {
     position: relative;
-    height: 0;
+    padding: 10px 0;
     margin: 0;
     opacity: 0;
     transition: opacity 0.15s;
     cursor: pointer;
     z-index: 10;
+    user-select: none;
   }
   .add-point::before {
     content: '';
@@ -1094,7 +1095,7 @@
     top: 50%;
     height: 1px;
     background: var(--signal);
-    opacity: 0.3;
+    opacity: 0.4;
   }
   .add-point::after {
     content: '+';
@@ -1115,10 +1116,7 @@
     border-radius: 50%;
     line-height: 1;
   }
-  section.editing .add-point { display: block; }
   section.editing .add-point:hover { opacity: 1; }
-  /* Make insertion points inert to contentEditable */
-  .add-point[contenteditable="false"] { user-select: none; }
 
   /* ── ADD panel (Phase 4) ── */
   .add-panel-overlay {
@@ -3407,34 +3405,9 @@ window.DossierApp = (function() {
     sec.querySelectorAll('.add-point').forEach(p => p.remove());
   }
 
-  /* ── Hook into section edit mode ── */
-  // Observe class changes on sections to detect editing state
-  const observer = new MutationObserver(function(mutations) {
-    mutations.forEach(function(m) {
-      if (m.type !== 'attributes' || m.attributeName !== 'class') return;
-      const sec = m.target;
-      if (!(sec instanceof HTMLElement) || !sec.classList.contains('section')) return;
-      if (sec.classList.contains('editing')) {
-        injectAddPoints(sec);
-      } else {
-        removeAddPoints(sec);
-      }
-    });
-  });
-  document.querySelectorAll('section.section').forEach(sec => {
-    observer.observe(sec, { attributes: true, attributeFilter: ['class'] });
-  });
-  // Also observe for dynamically added sections
-  new MutationObserver(function(mutations) {
-    mutations.forEach(function(m) {
-      m.addedNodes.forEach(function(node) {
-        if (node.nodeType === 1 && node.querySelector) {
-          const sec = node.querySelector('section.section') || (node.classList && node.classList.contains('section') ? node : null);
-          if (sec) observer.observe(sec, { attributes: true, attributeFilter: ['class'] });
-        }
-      });
-    });
-  }).observe(document.body, { childList: true, subtree: true });
+  /* ── Expose for section editor integration ── */
+  window._injectAddPoints = injectAddPoints;
+  window._removeAddPoints = removeAddPoints;
 
   /* ── Table controls (delegated) ── */
   document.addEventListener('click', function(e) {
@@ -3477,13 +3450,6 @@ window.DossierApp = (function() {
       }
     }
   });
-
-  /* ── Clean add-points from saved HTML ── */
-  // Extend the section editor's save to strip add-points
-  const origDoSave = window._origDoSave;
-  // Handled by the section editor's temp.innerHTML stripping pattern
-  // Add-points have contenteditable=false so they persist in innerHTML
-  // We need to strip them. Patch into the save flow via the section editor.
 })();
 </script>
 
@@ -4006,6 +3972,9 @@ window.DossierApp = (function() {
       };
       frame.addEventListener('dblclick', frame._dblHandler);
     });
+
+    // Inject block insertion points (Phase 4)
+    if (window._injectAddPoints) window._injectAddPoints(sec);
   }
 
   /* ── Cancel edit (restore original) ── */
@@ -4020,6 +3989,8 @@ window.DossierApp = (function() {
 
   /* ── Save to Supabase ── */
   async function doSave(id, sec, editBtn, cancelBtn) {
+    // Remove insertion points before saving
+    if (window._removeAddPoints) window._removeAddPoints(sec);
     // Clean up SVG editing state before saving
     sec.querySelectorAll('.svg-editing').forEach(el => el.classList.remove('svg-editing'));
     sec.querySelectorAll('.svg-edit-hint').forEach(el => el.remove());
