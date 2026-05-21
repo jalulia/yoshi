@@ -1342,6 +1342,59 @@
   }
   .add-panel-close:hover { color: var(--ink); }
 
+  .add-panel-editing-info {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--signal);
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    background: var(--signal-soft);
+    border-radius: 3px;
+    display: none;
+  }
+  .add-panel-editing-info.active { display: block; }
+  .add-panel-editing-info .editing-section-name {
+    display: block;
+    font-family: var(--sans);
+    font-size: 12px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--ink);
+    margin-top: 4px;
+  }
+  .add-panel-save-bar {
+    display: none;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .add-panel-save-bar.active { display: flex; }
+  .add-panel-save-btn, .add-panel-cancel-btn {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 0;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid;
+    transition: background 0.12s, color 0.12s;
+  }
+  .add-panel-save-btn {
+    color: var(--paper);
+    background: var(--done);
+    border-color: var(--done);
+  }
+  .add-panel-save-btn:hover { opacity: 0.85; }
+  .add-panel-cancel-btn {
+    color: var(--ink-faint);
+    background: none;
+    border-color: var(--rule);
+  }
+  .add-panel-cancel-btn:hover { color: var(--ink); border-color: var(--ink-mid); }
+
   .add-panel-group {
     margin-bottom: 16px;
   }
@@ -1731,7 +1784,7 @@
   <div class="cover-strip"></div>
 
   <div class="cover-head">
-    <div class="left">Project Dossier · v6.4</div>
+    <div class="left">Project Dossier · v6.5</div>
     <div class="center">DOC&nbsp;·&nbsp;YO&#8209;001</div>
     <div class="right">Compiled 21 May 2026</div>
   </div>
@@ -1800,7 +1853,7 @@
       </div>
       <div>
         <dt>Date</dt>
-        <dd>21 May 2026<br><span class="meta-sub">v6.4 · revision live</span></dd>
+        <dd>21 May 2026<br><span class="meta-sub">v6.5 · revision live</span></dd>
       </div>
     </dl>
   </div>
@@ -2704,7 +2757,7 @@
       </div>
       <div>
         <h5>Document</h5>
-        <p>Yoshi Project Dossier<br>v6.4 · compiled 21 May 2026<br>DOC · YO-001</p>
+        <p>Yoshi Project Dossier<br>v6.5 · compiled 21 May 2026<br>DOC · YO-001</p>
       </div>
     </div>
   </section>
@@ -2719,7 +2772,7 @@ window.DossierApp = (function() {
   const SUPABASE_URL = 'https://odhvdtlhgvrpxcxsuzke.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kaHZkdGxoZ3ZycHhjeHN1emtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDAyNDgsImV4cCI6MjA5NDcxNjI0OH0.b3Df-ifRyqKECA2PV0cFHTj12KK6xMzaZu_w7xN99uU';
 
-  const VERSION = 'v6.4';
+  const VERSION = 'v6.5';
   const COMPILED = '21 May 2026';
 
   /* Shared Supabase REST helper */
@@ -3413,6 +3466,13 @@ window.DossierApp = (function() {
       '<span class="add-panel-title">Add Block</span>' +
       '<button class="add-panel-close">✕</button>' +
     '</div>' +
+    '<div class="add-panel-editing-info">' +
+      'Editing <span class="editing-section-name"></span>' +
+    '</div>' +
+    '<div class="add-panel-save-bar">' +
+      '<button class="add-panel-save-btn">Save</button>' +
+      '<button class="add-panel-cancel-btn">Cancel</button>' +
+    '</div>' +
     '<div class="add-panel-group">' +
       '<div class="add-panel-group-label">Text</div>' +
       '<button class="add-panel-item" data-block="subhead"><span class="add-icon">§</span>Section heading</button>' +
@@ -3446,6 +3506,30 @@ window.DossierApp = (function() {
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && panel.classList.contains('open')) closePanel();
   });
+
+  /* Panel save/cancel buttons — trigger section editor */
+  panel.querySelector('.add-panel-save-btn').addEventListener('click', function() {
+    if (window._triggerSectionSave) window._triggerSectionSave();
+  });
+  panel.querySelector('.add-panel-cancel-btn').addEventListener('click', function() {
+    if (window._triggerSectionCancel) window._triggerSectionCancel();
+  });
+
+  /* Update panel editing state */
+  function updatePanelEditingState(sectionName) {
+    const info = panel.querySelector('.add-panel-editing-info');
+    const bar = panel.querySelector('.add-panel-save-bar');
+    const nameEl = panel.querySelector('.editing-section-name');
+    if (sectionName) {
+      nameEl.textContent = sectionName;
+      info.classList.add('active');
+      bar.classList.add('active');
+    } else {
+      info.classList.remove('active');
+      bar.classList.remove('active');
+    }
+  }
+  window._updatePanelEditingState = updatePanelEditingState;
 
   /* Expose for section editor integration */
   window._openAddPanel = openPanel;
@@ -4482,13 +4566,16 @@ window.DossierApp = (function() {
     sec.contentEditable = 'true';
     sec.focus();
 
-    // Auto-open the ADD panel
+    // Auto-open the ADD panel with section info
     if (window._openAddPanel) window._openAddPanel(null);
+    var sectionName = sec.querySelector('.section-name');
+    if (window._updatePanelEditingState) window._updatePanelEditingState(sectionName ? sectionName.textContent : 'Section');
   }
 
   /* ── Cancel edit (restore original) ── */
   function doCancel(id, sec, editBtn, cancelBtn) {
     if (window._closeAddPanel) window._closeAddPanel();
+    if (window._updatePanelEditingState) window._updatePanelEditingState(null);
     sec.innerHTML = _originals[id];
     sec.contentEditable = 'false';
     sec.classList.remove('editing');
@@ -4500,6 +4587,7 @@ window.DossierApp = (function() {
   /* ── Save to Supabase ── */
   async function doSave(id, sec, editBtn, cancelBtn) {
     if (window._closeAddPanel) window._closeAddPanel();
+    if (window._updatePanelEditingState) window._updatePanelEditingState(null);
     // Remove insertion points before saving
     if (window._removeAddPoints) window._removeAddPoints(sec);
     // Clean up SVG editing state before saving
@@ -4555,6 +4643,18 @@ window.DossierApp = (function() {
 
   /* ── Initial wiring ── */
   window._wireSectionFn = wireSection; // expose for TOC manager
+
+  /* Expose save/cancel triggers for the ADD panel buttons */
+  window._triggerSectionSave = function() {
+    if (_activeSection) {
+      doSave(_activeSection.id, _activeSection.sec, _activeSection.editBtn, _activeSection.cancelBtn);
+    }
+  };
+  window._triggerSectionCancel = function() {
+    if (_activeSection) {
+      doCancel(_activeSection.id, _activeSection.sec, _activeSection.editBtn, _activeSection.cancelBtn);
+    }
+  };
   document.querySelectorAll('section.section').forEach(wireSection);
 
   /* ── Load saved content from Supabase, then re-wire ── */
