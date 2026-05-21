@@ -1178,6 +1178,116 @@
     border-color: var(--signal);
   }
 
+  /* ── File upload zone (Phase 5) ── */
+  .fig-upload-zone {
+    border: 2px dashed var(--rule);
+    border-radius: 4px;
+    padding: 32px 20px;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .fig-upload-zone.dragover {
+    border-color: var(--signal);
+    background: var(--signal-soft);
+  }
+  .fig-upload-zone .fig-drop-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+  }
+  .fig-upload-zone .fig-browse-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--signal);
+    background: none;
+    border: 1px solid var(--signal);
+    border-radius: 2px;
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .fig-upload-zone .fig-browse-btn:hover {
+    background: var(--signal);
+    color: var(--paper);
+  }
+  .fig-upload-zone input[type="file"] { display: none; }
+  .fig-upload-fields {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  .fig-upload-fields input {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 0.5px solid var(--rule);
+    border-radius: 2px;
+    padding: 4px 10px;
+    width: 180px;
+    outline: none;
+  }
+  .fig-upload-fields input:focus { border-color: var(--signal); }
+  .fig-upload-fields input::placeholder { color: var(--ink-faint); }
+  .fig-upload-progress {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-faint);
+    margin-top: 8px;
+  }
+  /* Edit/delete overlay on uploaded figures */
+  .fig-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .figure:hover .fig-actions { opacity: 1; }
+  .fig-action-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    background: var(--paper);
+    border: 0.5px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    color: var(--ink-faint);
+    transition: color 0.12s, border-color 0.12s;
+  }
+  .fig-action-btn:hover { color: var(--signal); border-color: var(--signal); }
+  /* 3D badge */
+  .fig-3d-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--ink);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+  .fig-3d-canvas {
+    width: 100%;
+    aspect-ratio: 16/10;
+    display: block;
+    border-radius: 2px;
+    background: #f4f4f2;
+  }
+
   /* ── ADD panel (Phase 4) ── */
   .add-panel-overlay {
     position: fixed;
@@ -1624,7 +1734,7 @@
   <div class="cover-strip"></div>
 
   <div class="cover-head">
-    <div class="left">Project Dossier · v6.2</div>
+    <div class="left">Project Dossier · v6.3</div>
     <div class="center">DOC&nbsp;·&nbsp;YO&#8209;001</div>
     <div class="right">Compiled 21 May 2026</div>
   </div>
@@ -1693,7 +1803,7 @@
       </div>
       <div>
         <dt>Date</dt>
-        <dd>21 May 2026<br><span class="meta-sub">v6.2 · revision live</span></dd>
+        <dd>21 May 2026<br><span class="meta-sub">v6.3 · revision live</span></dd>
       </div>
     </dl>
   </div>
@@ -2597,7 +2707,7 @@
       </div>
       <div>
         <h5>Document</h5>
-        <p>Yoshi Project Dossier<br>v6.2 · compiled 21 May 2026<br>DOC · YO-001</p>
+        <p>Yoshi Project Dossier<br>v6.3 · compiled 21 May 2026<br>DOC · YO-001</p>
       </div>
     </div>
   </section>
@@ -2612,7 +2722,7 @@ window.DossierApp = (function() {
   const SUPABASE_URL = 'https://odhvdtlhgvrpxcxsuzke.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kaHZkdGxoZ3ZycHhjeHN1emtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDAyNDgsImV4cCI6MjA5NDcxNjI0OH0.b3Df-ifRyqKECA2PV0cFHTj12KK6xMzaZu_w7xN99uU';
 
-  const VERSION = 'v6.2';
+  const VERSION = 'v6.3';
   const COMPILED = '21 May 2026';
 
   /* Shared Supabase REST helper */
@@ -2894,6 +3004,27 @@ window.DossierApp = (function() {
     // Don't intercept if focus is in an input or the tracker
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
     if (document.getElementById('sec-08') && document.getElementById('sec-08').contains(document.activeElement)) return;
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      // Block undo — only if the last action was a block insert/delete
+      var stack = window._blockUndoStack;
+      var editingSec = document.querySelector('section.editing');
+      if (stack && stack.length > 0 && editingSec) {
+        var last = stack[stack.length - 1];
+        if (last.secId === editingSec.id) {
+          e.preventDefault();
+          stack.pop();
+          editingSec.innerHTML = last.html;
+          // Re-wire after restore
+          if (window._wireSectionFn) window._wireSectionFn(editingSec);
+          if (window._injectAddPoints) window._injectAddPoints(editingSec);
+          editingSec.contentEditable = 'true';
+          editingSec.classList.add('editing');
+          return;
+        }
+      }
+      // Otherwise let browser handle native text undo
+    }
 
     if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
       e.preventDefault();
@@ -3360,13 +3491,21 @@ window.DossierApp = (function() {
         return document.createElement('hr');
       case 'image': {
         el.className = 'figure';
+        el.contentEditable = 'false';
+        el.style.position = 'relative';
         el.innerHTML =
-          '<div class="fig-frame" style="border:2px dashed var(--rule);padding:40px 20px;text-align:center;color:var(--ink-faint);font-family:var(--mono);font-size:11px;">' +
-            '📎 Image placeholder — upload coming in Phase 5' +
-          '</div>' +
-          '<div class="fig-cap">' +
-            '<span class="fig-label">Fig.</span> Caption text' +
+          '<div class="fig-upload-zone">' +
+            '<div class="fig-drop-text">Drop image or 3D file here</div>' +
+            '<button class="fig-browse-btn">Browse files</button>' +
+            '<input type="file" accept="image/*,.glb,.gltf,.skp" />' +
+            '<div class="fig-upload-fields">' +
+              '<input type="text" placeholder="Title (optional)" class="fig-title-input" />' +
+              '<input type="text" placeholder="Description (optional)" class="fig-desc-input" />' +
+            '</div>' +
+            '<div class="fig-upload-progress"></div>' +
           '</div>';
+        // Wire upload handlers after insertion
+        setTimeout(function() { wireUploadZone(el); }, 0);
         break;
       }
       case 'table': {
@@ -3420,6 +3559,9 @@ window.DossierApp = (function() {
       : document.querySelector('section.editing');
     if (!sec) return;
 
+    // Push undo snapshot before insertion
+    pushBlockUndo(sec);
+
     const newBlock = createBlock(blockType);
 
     if (_insertionTarget) {
@@ -3438,6 +3580,206 @@ window.DossierApp = (function() {
   });
 
   /* ── Inject insertion points into editing sections ── */
+  /* ── Block undo stack ── */
+  var _blockUndoStack = [];
+  function pushBlockUndo(sec) {
+    if (!sec) return;
+    _blockUndoStack.push({ secId: sec.id, html: sec.innerHTML });
+    if (_blockUndoStack.length > 20) _blockUndoStack.shift();
+  }
+  window._pushBlockUndo = pushBlockUndo;
+  window._blockUndoStack = _blockUndoStack;
+
+  /* ── File upload handler ── */
+  function wireUploadZone(figureEl) {
+    const zone = figureEl.querySelector('.fig-upload-zone');
+    if (!zone) return;
+    const fileInput = zone.querySelector('input[type="file"]');
+    const browseBtn = zone.querySelector('.fig-browse-btn');
+    const progress = zone.querySelector('.fig-upload-progress');
+    const titleInput = zone.querySelector('.fig-title-input');
+    const descInput = zone.querySelector('.fig-desc-input');
+
+    browseBtn.addEventListener('click', function(e) { e.preventDefault(); fileInput.click(); });
+    fileInput.addEventListener('change', function() { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', function() { zone.classList.remove('dragover'); });
+    zone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+
+    async function handleFile(file) {
+      const title = titleInput ? titleInput.value.trim() : '';
+      const desc = descInput ? descInput.value.trim() : '';
+      const isGlb = /\.(glb|gltf)$/i.test(file.name);
+      const isSkp = /\.skp$/i.test(file.name);
+      const fileType = isGlb ? 'glb' : isSkp ? 'sketchup' : 'image';
+
+      progress.textContent = 'Uploading…';
+
+      try {
+        // Upload to Supabase Storage
+        const path = 'uploads/' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const uploadRes = await DossierApp.storage('object/dossier-files/' + path, {
+          method: 'POST',
+          headers: {
+            'apikey': DossierApp.KEY,
+            'Authorization': 'Bearer ' + DossierApp.KEY,
+            'Content-Type': file.type || 'application/octet-stream'
+          },
+          body: file
+        });
+
+        if (!uploadRes.ok) throw new Error('Upload failed: ' + uploadRes.status);
+
+        const publicUrl = DossierApp.URL + '/storage/v1/object/public/dossier-files/' + path;
+
+        // Save metadata
+        const sec = figureEl.closest('section.section');
+        await DossierApp.sb('dossier_files', {
+          method: 'POST',
+          headers: {
+            'apikey': DossierApp.KEY,
+            'Authorization': 'Bearer ' + DossierApp.KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            section_id: sec ? sec.id : null,
+            filename: file.name,
+            storage_path: path,
+            file_type: fileType,
+            title: title,
+            description: desc
+          })
+        });
+
+        // Render the uploaded file
+        renderUploadedFile(figureEl, publicUrl, fileType, title, desc, file.name);
+
+      } catch(err) {
+        progress.textContent = 'Error: ' + err.message;
+      }
+    }
+  }
+
+  /* ── Render uploaded file in figure block ── */
+  function renderUploadedFile(figureEl, url, fileType, title, desc, filename) {
+    figureEl.style.position = 'relative';
+    const captionParts = [];
+    if (title) captionParts.push(title);
+    if (desc) captionParts.push(desc);
+    const captionText = captionParts.join(' — ') || filename;
+
+    if (fileType === 'glb') {
+      figureEl.innerHTML =
+        '<div class="fig-frame" style="position:relative;overflow:hidden;">' +
+          '<canvas class="fig-3d-canvas" data-glb-url="' + url + '"></canvas>' +
+          '<span class="fig-3d-badge">3D</span>' +
+        '</div>' +
+        '<div class="fig-cap"><span class="fig-label">Fig.</span> ' + captionText + '</div>' +
+        '<div class="fig-actions">' +
+          '<button class="fig-action-btn fig-delete-btn" title="Delete">🗑</button>' +
+        '</div>';
+      // Lazy-load Three.js and init viewer
+      initGlbViewer(figureEl.querySelector('.fig-3d-canvas'));
+    } else {
+      figureEl.innerHTML =
+        '<div class="fig-frame"><img src="' + url + '" alt="' + (title || filename) + '" style="width:100%;display:block;border-radius:2px;" /></div>' +
+        '<div class="fig-cap"><span class="fig-label">Fig.</span> ' + captionText + '</div>' +
+        '<div class="fig-actions">' +
+          '<button class="fig-action-btn fig-delete-btn" title="Delete">🗑</button>' +
+        '</div>';
+    }
+
+    // Wire delete button
+    const delBtn = figureEl.querySelector('.fig-delete-btn');
+    if (delBtn) {
+      delBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (confirm('Delete this figure?')) {
+          const sec = figureEl.closest('section.section');
+          figureEl.remove();
+          if (sec && window._injectAddPoints) window._injectAddPoints(sec);
+        }
+      });
+    }
+  }
+
+  /* ── GLB 3D Viewer (lazy-loads Three.js) ── */
+  var _threeLoaded = false;
+  function loadThreeJs(callback) {
+    if (_threeLoaded) { callback(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    s.onload = function() {
+      // Load OrbitControls as addon
+      var s2 = document.createElement('script');
+      s2.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
+      s2.onload = function() {
+        var s3 = document.createElement('script');
+        s3.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+        s3.onload = function() { _threeLoaded = true; callback(); };
+        document.head.appendChild(s3);
+      };
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+  }
+
+  function initGlbViewer(canvas) {
+    if (!canvas) return;
+    var url = canvas.dataset.glbUrl;
+    loadThreeJs(function() {
+      var w = canvas.clientWidth || 600;
+      var h = canvas.clientHeight || 375;
+      var scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf4f4f2);
+      var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+      var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(window.devicePixelRatio);
+
+      // Lighting
+      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      var dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(5, 10, 7);
+      scene.add(dirLight);
+
+      // Controls
+      var controls = new THREE.OrbitControls(camera, canvas);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+
+      // Load GLB
+      var loader = new THREE.GLTFLoader();
+      loader.load(url, function(gltf) {
+        var model = gltf.scene;
+        scene.add(model);
+        // Center and fit
+        var box = new THREE.Box3().setFromObject(model);
+        var center = box.getCenter(new THREE.Vector3());
+        var size = box.getSize(new THREE.Vector3());
+        model.position.sub(center);
+        var maxDim = Math.max(size.x, size.y, size.z);
+        camera.position.set(0, maxDim * 0.5, maxDim * 1.5);
+        controls.target.set(0, 0, 0);
+        controls.update();
+      });
+
+      // Animate
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+    });
+  }
+
   function injectAddPoints(sec) {
     // Remove any existing add-points and delete buttons
     sec.querySelectorAll('.add-point').forEach(p => p.remove());
@@ -3478,6 +3820,7 @@ window.DossierApp = (function() {
           e.stopPropagation();
           e.preventDefault();
           if (confirm('Delete this block?')) {
+            pushBlockUndo(sec);
             block.remove();
             injectAddPoints(sec); // refresh
           }
