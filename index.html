@@ -766,21 +766,22 @@
   .section-head { position: relative; }
   .section-edit-btn {
     position: absolute;
-    left: -44px;
+    left: -48px;
     top: 8px;
     font-family: var(--mono);
-    font-size: 7px;
-    letter-spacing: 0.12em;
+    font-size: 9px;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--ink-faint);
     background: none;
     border: 1px solid transparent;
     border-radius: 2px;
     cursor: pointer;
-    padding: 3px 5px;
+    padding: 3px 6px;
     opacity: 0;
     transition: opacity 0.15s, color 0.15s, border-color 0.15s;
     white-space: nowrap;
+    line-height: 1.2;
   }
   .section-head:hover .section-edit-btn,
   .section-edit-btn.active { opacity: 1; }
@@ -791,11 +792,186 @@
   .section-edit-btn.cancel {
     color: var(--ink-faint);
     border-color: var(--rule);
-    left: -90px;
+    left: -88px;
   }
+  .section-edit-btn.cancel:hover {
+    color: var(--signal);
+    border-color: var(--signal);
+  }
+
+  /* Editing state — dashed outline + sticky section head for long sections */
   section.editing {
     outline: 1px dashed var(--rule);
     outline-offset: 8px;
+  }
+  section.editing > .section-head {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--paper);
+    padding-top: 12px;
+    padding-bottom: 12px;
+    border-bottom: 0.5px solid var(--rule);
+    margin-bottom: 24px;
+  }
+
+  /* SVG protection — prevent accidental edits, require double-click */
+  section.editing .figure,
+  section.editing .fig-frame {
+    position: relative;
+  }
+  section.editing .fig-frame svg {
+    pointer-events: none;
+    user-select: none;
+  }
+  section.editing .fig-frame svg.svg-editing {
+    pointer-events: auto;
+    user-select: text;
+    outline: 1px dashed var(--amber);
+    outline-offset: 4px;
+  }
+  section.editing .svg-edit-hint {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: var(--paper);
+    padding: 2px 6px;
+    border: 0.5px solid var(--rule);
+    border-radius: 2px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  section.editing .fig-frame:hover .svg-edit-hint { opacity: 1; }
+  section.editing .fig-frame:hover .svg-edit-hint.active {
+    color: var(--amber);
+    border-color: var(--amber);
+    opacity: 1;
+  }
+
+  /* ── Quick-jump menu (Phase 1) ── */
+  .qj-toggle {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 900;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper);
+    border: 0.5px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .qj-toggle:hover {
+    border-color: var(--ink-mid);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .qj-toggle svg {
+    width: 16px;
+    height: 16px;
+    stroke: var(--ink-mid);
+    stroke-width: 1.5;
+    fill: none;
+  }
+  .qj-toggle:hover svg { stroke: var(--ink); }
+  .qj-toggle[aria-expanded="true"] {
+    border-color: var(--signal);
+  }
+  .qj-toggle[aria-expanded="true"] svg { stroke: var(--signal); }
+
+  .qj-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 899;
+    background: rgba(0,0,0,0.08);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .qj-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .qj-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 901;
+    width: 300px;
+    max-width: 85vw;
+    height: 100vh;
+    background: var(--paper);
+    border-left: 0.5px solid var(--rule);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    padding: 64px 24px 32px;
+  }
+  .qj-panel.open {
+    transform: translateX(0);
+  }
+
+  .qj-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 0.5px solid var(--rule);
+  }
+
+  .qj-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .qj-list li { margin: 0; }
+  .qj-list a {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    align-items: baseline;
+    padding: 10px 8px;
+    text-decoration: none;
+    color: var(--ink);
+    border-bottom: 0.5px solid var(--rule);
+    transition: background 0.12s, color 0.12s;
+  }
+  .qj-list a:hover {
+    background: var(--signal-soft);
+  }
+  .qj-list .qj-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--signal);
+    letter-spacing: 0.06em;
+  }
+  .qj-list .qj-title {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .qj-list .qj-sub {
+    display: block;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-top: 2px;
   }
 
   /* ── Drag & drop ── */
@@ -2017,6 +2193,88 @@ window.DossierApp = (function() {
     storage: storage
   };
 })();
+
+/* ─────────────────────────────────────────────
+   Quick-Jump Menu (Phase 1)
+   Fixed ☰ icon → slide-out section navigator.
+   Auto-generated from DOM sections.
+   ───────────────────────────────────────────── */
+(function() {
+  /* Build the toggle button */
+  const toggle = document.createElement('button');
+  toggle.className = 'qj-toggle';
+  toggle.setAttribute('aria-label', 'Jump to section');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.innerHTML = '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>';
+  document.body.appendChild(toggle);
+
+  /* Build the overlay (click-outside-to-close) */
+  const overlay = document.createElement('div');
+  overlay.className = 'qj-overlay';
+  document.body.appendChild(overlay);
+
+  /* Build the panel */
+  const panel = document.createElement('div');
+  panel.className = 'qj-panel';
+
+  const label = document.createElement('div');
+  label.className = 'qj-label';
+  label.textContent = 'Jump to Section';
+  panel.appendChild(label);
+
+  const list = document.createElement('ul');
+  list.className = 'qj-list';
+
+  /* Read sections from the DOM */
+  document.querySelectorAll('section.section').forEach(function(sec) {
+    const numEl = sec.querySelector('.section-num');
+    const nameEl = sec.querySelector('.section-name');
+    const tagEl = sec.querySelector('.section-tag');
+    if (!numEl || !nameEl) return;
+
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = '#' + sec.id;
+    a.innerHTML =
+      '<span class="qj-num">' + numEl.textContent + '</span>' +
+      '<span class="qj-title">' + nameEl.textContent +
+      (tagEl ? '<span class="qj-sub">' + tagEl.textContent + '</span>' : '') +
+      '</span>';
+
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      closeMenu();
+      sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+
+  panel.appendChild(list);
+  document.body.appendChild(panel);
+
+  /* Open / close */
+  function openMenu() {
+    panel.classList.add('open');
+    overlay.classList.add('open');
+    toggle.setAttribute('aria-expanded', 'true');
+  }
+  function closeMenu() {
+    panel.classList.remove('open');
+    overlay.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
+  }
+  function toggleMenu() {
+    panel.classList.contains('open') ? closeMenu() : openMenu();
+  }
+
+  toggle.addEventListener('click', toggleMenu);
+  overlay.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && panel.classList.contains('open')) closeMenu();
+  });
+})();
 </script>
 
 <script>
@@ -2445,23 +2703,26 @@ window.DossierApp = (function() {
 
 <script>
 /* ─────────────────────────────────────────────
-   Section Inline Editor
-   Click EDIT on any § header to edit content.
-   Saves to Supabase section_content table.
+   Section Inline Editor v2
+   Escape to cancel · SVG double-click to edit ·
+   Sticky save header · Saves to Supabase.
    ───────────────────────────────────────────── */
 (function() {
-  const URL = 'https://odhvdtlhgvrpxcxsuzke.supabase.co';
-  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kaHZkdGxoZ3ZycHhjeHN1emtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDAyNDgsImV4cCI6MjA5NDcxNjI0OH0.b3Df-ifRyqKECA2PV0cFHTj12KK6xMzaZu_w7xN99uU';
+  const URL = DossierApp.URL;
+  const KEY = DossierApp.KEY;
   const headers = {'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};
 
   let _originals = {};
+  let _activeSection = null;  // track which section is being edited
 
-  // Find all sections and inject edit buttons
-  document.querySelectorAll('section.section').forEach(sec => {
+  /* ── Wire up a section with edit/cancel/save ── */
+  function wireSection(sec) {
     const id = sec.id;
-    if (!id || id === 'sec-08') return; // § 08 has its own tracker
+    if (!id || id === 'sec-08') return;
     const head = sec.querySelector('.section-head');
     if (!head) return;
+    // Skip if already wired
+    if (head.querySelector('.section-edit-btn')) return;
 
     const editBtn = document.createElement('button');
     editBtn.className = 'section-edit-btn';
@@ -2476,38 +2737,86 @@ window.DossierApp = (function() {
 
     editBtn.addEventListener('click', () => {
       if (sec.classList.contains('editing')) {
-        // Save
-        saveSection(id, sec, editBtn, cancelBtn);
+        doSave(id, sec, editBtn, cancelBtn);
       } else {
-        // Enter edit mode
-        _originals[id] = sec.innerHTML;
-        sec.contentEditable = 'true';
-        sec.classList.add('editing');
-        editBtn.textContent = 'save';
-        editBtn.classList.add('active');
-        cancelBtn.style.display = '';
+        doEnterEdit(id, sec, editBtn, cancelBtn);
       }
     });
 
     cancelBtn.addEventListener('click', () => {
-      sec.innerHTML = _originals[id];
-      sec.contentEditable = 'false';
-      sec.classList.remove('editing');
-      // Re-inject buttons since innerHTML was restored
-      const newHead = sec.querySelector('.section-head');
-      if (newHead) {
-        newHead.appendChild(editBtn);
-        newHead.appendChild(cancelBtn);
-      }
-      editBtn.textContent = 'edit';
-      editBtn.classList.remove('active');
-      cancelBtn.style.display = 'none';
+      doCancel(id, sec, editBtn, cancelBtn);
     });
-  });
+  }
 
-  async function saveSection(id, sec, editBtn, cancelBtn) {
+  /* ── Enter edit mode ── */
+  function doEnterEdit(id, sec, editBtn, cancelBtn) {
+    _originals[id] = sec.innerHTML;
+    _activeSection = { id, sec, editBtn, cancelBtn };
+    sec.contentEditable = 'true';
+    sec.classList.add('editing');
+    editBtn.textContent = 'save';
+    editBtn.classList.add('active');
+    cancelBtn.style.display = '';
+
+    // SVG protection — lock all SVGs, add double-click hints
+    sec.querySelectorAll('.fig-frame').forEach(frame => {
+      const svg = frame.querySelector('svg');
+      if (!svg) return;
+      // Hint badge
+      let hint = frame.querySelector('.svg-edit-hint');
+      if (!hint) {
+        hint = document.createElement('span');
+        hint.className = 'svg-edit-hint';
+        hint.textContent = 'double-click to edit';
+        frame.style.position = 'relative';
+        frame.appendChild(hint);
+      }
+      // Double-click handler
+      frame._dblHandler = function(e) {
+        e.stopPropagation();
+        svg.classList.add('svg-editing');
+        hint.textContent = 'editing diagram';
+        hint.classList.add('active');
+        // Click outside SVG to re-lock
+        function lockSvg(ev) {
+          if (!svg.contains(ev.target)) {
+            svg.classList.remove('svg-editing');
+            hint.textContent = 'double-click to edit';
+            hint.classList.remove('active');
+            document.removeEventListener('click', lockSvg, true);
+          }
+        }
+        setTimeout(() => document.addEventListener('click', lockSvg, true), 0);
+      };
+      frame.addEventListener('dblclick', frame._dblHandler);
+    });
+  }
+
+  /* ── Cancel edit (restore original) ── */
+  function doCancel(id, sec, editBtn, cancelBtn) {
+    sec.innerHTML = _originals[id];
     sec.contentEditable = 'false';
     sec.classList.remove('editing');
+    _activeSection = null;
+    // Re-wire since innerHTML was restored
+    wireSection(sec);
+  }
+
+  /* ── Save to Supabase ── */
+  async function doSave(id, sec, editBtn, cancelBtn) {
+    // Clean up SVG editing state before saving
+    sec.querySelectorAll('.svg-editing').forEach(el => el.classList.remove('svg-editing'));
+    sec.querySelectorAll('.svg-edit-hint').forEach(el => el.remove());
+    sec.querySelectorAll('.fig-frame').forEach(frame => {
+      if (frame._dblHandler) {
+        frame.removeEventListener('dblclick', frame._dblHandler);
+        delete frame._dblHandler;
+      }
+    });
+
+    sec.contentEditable = 'false';
+    sec.classList.remove('editing');
+    _activeSection = null;
     editBtn.textContent = '…';
     cancelBtn.style.display = 'none';
     try {
@@ -2526,7 +2835,23 @@ window.DossierApp = (function() {
     }
   }
 
-  // On load, apply any saved section content
+  /* ── Escape key → cancel active edit ── */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && _activeSection) {
+      e.preventDefault();
+      doCancel(
+        _activeSection.id,
+        _activeSection.sec,
+        _activeSection.editBtn,
+        _activeSection.cancelBtn
+      );
+    }
+  });
+
+  /* ── Initial wiring ── */
+  document.querySelectorAll('section.section').forEach(wireSection);
+
+  /* ── Load saved content from Supabase, then re-wire ── */
   async function loadSections() {
     try {
       const res = await fetch(URL+'/rest/v1/section_content?select=id,html', {headers:{'apikey':KEY}});
@@ -2536,41 +2861,7 @@ window.DossierApp = (function() {
         const sec = document.getElementById(row.id);
         if (sec && row.id !== 'sec-08') {
           sec.innerHTML = row.html;
-          // Re-inject edit buttons
-          const head = sec.querySelector('.section-head');
-          if (head) {
-            const editBtn = document.createElement('button');
-            editBtn.className = 'section-edit-btn';
-            editBtn.textContent = 'edit';
-            head.appendChild(editBtn);
-            const cancelBtn = document.createElement('button');
-            cancelBtn.className = 'section-edit-btn cancel';
-            cancelBtn.textContent = '✕';
-            cancelBtn.style.display = 'none';
-            head.appendChild(cancelBtn);
-            editBtn.addEventListener('click', () => {
-              if (sec.classList.contains('editing')) {
-                saveSection(row.id, sec, editBtn, cancelBtn);
-              } else {
-                _originals[row.id] = sec.innerHTML;
-                sec.contentEditable = 'true';
-                sec.classList.add('editing');
-                editBtn.textContent = 'save';
-                editBtn.classList.add('active');
-                cancelBtn.style.display = '';
-              }
-            });
-            cancelBtn.addEventListener('click', () => {
-              sec.innerHTML = _originals[row.id];
-              sec.contentEditable = 'false';
-              sec.classList.remove('editing');
-              const newHead = sec.querySelector('.section-head');
-              if (newHead) { newHead.appendChild(editBtn); newHead.appendChild(cancelBtn); }
-              editBtn.textContent = 'edit';
-              editBtn.classList.remove('active');
-              cancelBtn.style.display = 'none';
-            });
-          }
+          wireSection(sec);
         }
       });
     } catch(e) { /* silent fail — static content still shows */ }
