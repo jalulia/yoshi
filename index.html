@@ -397,6 +397,10 @@
     letter-spacing: -0.01em;
     color: var(--ink);
   }
+  .sub-head.no-num {
+    grid-template-columns: 1fr;
+    margin-left: 60px;
+  }
 
   /* Body prose */
   .prose {
@@ -3307,7 +3311,7 @@ window.DossierApp = (function() {
         el.innerHTML = '<p>New paragraph text.</p>';
         break;
       case 'heading':
-        el.className = 'sub-head';
+        el.className = 'sub-head no-num';
         el.innerHTML = '<div class="sub-name">Heading text</div>';
         break;
       case 'note':
