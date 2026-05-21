@@ -354,6 +354,13 @@
     grid-template-columns: 60px 1fr auto;
     align-items: baseline;
     margin-bottom: 32px;
+    /* Always sticky — so you know which section you're in */
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--paper);
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
   .section-num {
     font-family: var(--mono);
@@ -767,7 +774,7 @@
   }
 
   /* ── Section inline editor ── */
-  .section-head { position: relative; }
+  /* section-head is already sticky (positioned) — edit buttons use absolute within it */
   .section-edit-btn {
     position: absolute;
     left: -48px;
@@ -809,12 +816,6 @@
     outline-offset: 12px;
   }
   section.editing > .section-head {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: var(--paper);
-    padding-top: 12px;
-    padding-bottom: 12px;
     border-bottom: 0.5px solid var(--rule);
     margin-bottom: 24px;
   }
@@ -1583,9 +1584,9 @@
   <div class="cover-strip"></div>
 
   <div class="cover-head">
-    <div class="left">Project Dossier · v6</div>
+    <div class="left">Project Dossier · v6.1</div>
     <div class="center">DOC&nbsp;·&nbsp;YO&#8209;001</div>
-    <div class="right">Compiled 20 May 2026</div>
+    <div class="right">Compiled 21 May 2026</div>
   </div>
 
   <!-- watermark van behind everything -->
@@ -1652,7 +1653,7 @@
       </div>
       <div>
         <dt>Date</dt>
-        <dd>20 May 2026<br><span class="meta-sub">v6 · revision live</span></dd>
+        <dd>21 May 2026<br><span class="meta-sub">v6.1 · revision live</span></dd>
       </div>
     </dl>
   </div>
@@ -2556,7 +2557,7 @@
       </div>
       <div>
         <h5>Document</h5>
-        <p>Yoshi Project Dossier<br>v6 · compiled 20 May 2026<br>DOC · YO-001</p>
+        <p>Yoshi Project Dossier<br>v6.1 · compiled 21 May 2026<br>DOC · YO-001</p>
       </div>
     </div>
   </section>
@@ -2571,8 +2572,8 @@ window.DossierApp = (function() {
   const SUPABASE_URL = 'https://odhvdtlhgvrpxcxsuzke.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kaHZkdGxoZ3ZycHhjeHN1emtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDAyNDgsImV4cCI6MjA5NDcxNjI0OH0.b3Df-ifRyqKECA2PV0cFHTj12KK6xMzaZu_w7xN99uU';
 
-  const VERSION = 'v6';
-  const COMPILED = '20 May 2026';
+  const VERSION = 'v6.1';
+  const COMPILED = '21 May 2026';
 
   /* Shared Supabase REST helper */
   function sb(path, opts) {
@@ -3379,9 +3380,12 @@ window.DossierApp = (function() {
     if (!item || !_insertionTarget) return;
     const blockType = item.dataset.block;
     const newBlock = createBlock(blockType);
+    const sec = _insertionTarget.closest('section.section');
     // Insert after the insertion point
     _insertionTarget.after(newBlock);
     closePanel();
+    // Refresh all add-points so new block gets + markers around it
+    if (sec) injectAddPoints(sec);
   });
 
   /* ── Inject insertion points into editing sections ── */
