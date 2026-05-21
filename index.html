@@ -1787,10 +1787,11 @@
     padding: 16px 20px;
     margin-left: 60px;
     max-width: 660px;
-    text-decoration: none;
+    cursor: pointer;
     color: var(--ink);
     transition: border-color 0.15s, box-shadow 0.15s;
   }
+  section.editing .link-card { cursor: text; }
   .link-card:hover {
     border-color: var(--ink-mid);
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -1877,7 +1878,7 @@
   <div class="cover-strip"></div>
 
   <div class="cover-head">
-    <div class="left">Project Dossier · v7.0</div>
+    <div class="left">Project Dossier · v7.1</div>
     <div class="center">DOC&nbsp;·&nbsp;YO&#8209;001</div>
     <div class="right">Compiled 21 May 2026</div>
   </div>
@@ -1946,7 +1947,7 @@
       </div>
       <div>
         <dt>Date</dt>
-        <dd>21 May 2026<br><span class="meta-sub">v7.0 · revision live</span></dd>
+        <dd>21 May 2026<br><span class="meta-sub">v7.1 · revision live</span></dd>
       </div>
     </dl>
   </div>
@@ -2850,7 +2851,7 @@
       </div>
       <div>
         <h5>Document</h5>
-        <p>Yoshi Project Dossier<br>v7.0 · compiled 21 May 2026<br>DOC · YO-001</p>
+        <p>Yoshi Project Dossier<br>v7.1 · compiled 21 May 2026<br>DOC · YO-001</p>
       </div>
     </div>
   </section>
@@ -2865,7 +2866,7 @@ window.DossierApp = (function() {
   const SUPABASE_URL = 'https://odhvdtlhgvrpxcxsuzke.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kaHZkdGxoZ3ZycHhjeHN1emtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDAyNDgsImV4cCI6MjA5NDcxNjI0OH0.b3Df-ifRyqKECA2PV0cFHTj12KK6xMzaZu_w7xN99uU';
 
-  const VERSION = 'v7.0';
+  const VERSION = 'v7.1';
   const COMPILED = '21 May 2026';
 
   /* Shared Supabase REST helper */
@@ -3191,6 +3192,22 @@ window.DossierApp = (function() {
     }
   });
 })();
+
+/* ── Link card click handler (view mode only) ── */
+document.addEventListener('click', function(e) {
+  var card = e.target.closest('.link-card');
+  if (!card) return;
+  // Don't navigate if inside an editing section
+  if (card.closest('section.editing')) return;
+  var urlEl = card.querySelector('.link-card-url');
+  if (urlEl) {
+    var url = urlEl.textContent.trim();
+    if (url && url !== 'https://example.com') {
+      if (!url.startsWith('http')) url = 'https://' + url;
+      window.open(url, '_blank');
+    }
+  }
+});
 </script>
 
 <script>
@@ -3715,26 +3732,13 @@ window.DossierApp = (function() {
         el.innerHTML = '<dl><dt>Label</dt><dd>Value</dd></dl>';
         break;
       case 'linkcard': {
-        const linkEl = document.createElement('a');
-        linkEl.className = 'link-card';
-        linkEl.href = '#';
-        linkEl.target = '_blank';
-        linkEl.contentEditable = 'false';
-        linkEl.innerHTML =
-          '<div class="link-card-title" contenteditable="true">Link title</div>' +
-          '<div class="link-card-desc" contenteditable="true">Brief description</div>' +
-          '<div class="link-card-url" contenteditable="true">https://example.com</div>';
-        setTimeout(function() {
-          var urlEl = linkEl.querySelector('.link-card-url');
-          if (urlEl) {
-            urlEl.addEventListener('blur', function() {
-              var url = urlEl.textContent.trim();
-              if (url && !url.startsWith('http')) url = 'https://' + url;
-              linkEl.href = url;
-            });
-          }
-        }, 0);
-        return linkEl;
+        el.className = 'link-card';
+        el.dataset.href = '';
+        el.innerHTML =
+          '<div class="link-card-title">Link title</div>' +
+          '<div class="link-card-desc">Brief description</div>' +
+          '<div class="link-card-url">https://example.com</div>';
+        break;
       }
       default:
         el.className = 'prose';
