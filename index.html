@@ -1135,6 +1135,48 @@
     background: var(--signal);
     color: var(--paper);
   }
+  /* Selected insertion point — stays highlighted */
+  section.editing .add-point.selected {
+    opacity: 1;
+  }
+  section.editing .add-point.selected::before {
+    border-top-style: solid;
+    opacity: 1;
+  }
+  section.editing .add-point.selected::after {
+    background: var(--signal);
+    color: var(--paper);
+  }
+
+  /* Block delete button — shows on hover in edit mode */
+  .block-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--ink-faint);
+    background: var(--paper);
+    border: 0.5px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+    z-index: 5;
+    user-select: none;
+  }
+  section.editing .block-deletable:hover > .block-delete,
+  section.editing .block-delete:hover {
+    opacity: 1;
+  }
+  .block-delete:hover {
+    color: var(--signal);
+    border-color: var(--signal);
+  }
 
   /* ── ADD panel (Phase 4) ── */
   .add-panel-overlay {
@@ -1244,9 +1286,7 @@
     opacity: 0;
     transition: opacity 0.15s;
   }
-  section.editing .compare:hover + .table-controls,
-  section.editing .table-controls:hover,
-  section.editing .compare:focus-within + .table-controls {
+  section.editing .table-controls {
     opacity: 1;
   }
   .table-ctrl-btn {
@@ -2863,14 +2903,6 @@ window.DossierApp = (function() {
       e.preventDefault();
       document.execCommand('italic', false);
     }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      document.execCommand('undo', false);
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
-      e.preventDefault();
-      document.execCommand('redo', false);
-    }
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
       const sel = window.getSelection();
@@ -3274,7 +3306,7 @@ window.DossierApp = (function() {
 
   /* ── Open / close ── */
   function openPanel(insertionPoint) {
-    _insertionTarget = insertionPoint;
+    _insertionTarget = insertionPoint || null;
     panel.classList.add('open');
     overlay.classList.add('open');
   }
@@ -3289,6 +3321,10 @@ window.DossierApp = (function() {
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && panel.classList.contains('open')) closePanel();
   });
+
+  /* Expose for section editor integration */
+  window._openAddPanel = openPanel;
+  window._closeAddPanel = closePanel;
 
   /* ── Block templates ── */
   function createBlock(type) {
@@ -3377,21 +3413,36 @@ window.DossierApp = (function() {
   /* ── Handle block selection ── */
   panel.addEventListener('click', function(e) {
     const item = e.target.closest('.add-panel-item');
-    if (!item || !_insertionTarget) return;
+    if (!item) return;
     const blockType = item.dataset.block;
+    const sec = _insertionTarget
+      ? _insertionTarget.closest('section.section')
+      : document.querySelector('section.editing');
+    if (!sec) return;
+
     const newBlock = createBlock(blockType);
-    const sec = _insertionTarget.closest('section.section');
-    // Insert after the insertion point
-    _insertionTarget.after(newBlock);
-    closePanel();
-    // Refresh all add-points so new block gets + markers around it
-    if (sec) injectAddPoints(sec);
+
+    if (_insertionTarget) {
+      _insertionTarget.after(newBlock);
+    } else {
+      // No target — append before colophon or at end
+      const colophon = sec.querySelector('.colophon');
+      if (colophon) colophon.before(newBlock);
+      else sec.appendChild(newBlock);
+    }
+
+    // Keep panel open for rapid insertion, clear target
+    _insertionTarget = null;
+    // Refresh add-points so new block gets + markers
+    injectAddPoints(sec);
   });
 
   /* ── Inject insertion points into editing sections ── */
   function injectAddPoints(sec) {
-    // Remove any existing
+    // Remove any existing add-points and delete buttons
     sec.querySelectorAll('.add-point').forEach(p => p.remove());
+    sec.querySelectorAll('.block-delete').forEach(b => b.remove());
+    sec.querySelectorAll('.block-deletable').forEach(b => b.classList.remove('block-deletable'));
 
     // Collect block-level children (skip the section-head)
     const blocks = Array.from(sec.children).filter(child =>
@@ -3400,16 +3451,39 @@ window.DossierApp = (function() {
       !child.classList.contains('colophon')
     );
 
-    // Insert a point before each block and after the last
+    // Insert a point before each block, and a delete button on each block
     blocks.forEach(block => {
       const point = document.createElement('div');
       point.className = 'add-point';
       point.contentEditable = 'false';
       point.addEventListener('click', function(e) {
         e.stopPropagation();
-        openPanel(point);
+        sec.querySelectorAll('.add-point.selected').forEach(p => p.classList.remove('selected'));
+        point.classList.add('selected');
+        _insertionTarget = point;
+        if (!panel.classList.contains('open')) openPanel(point);
       });
       block.before(point);
+
+      // Add delete button to each block
+      if (!block.querySelector('.block-delete')) {
+        block.style.position = 'relative';
+        block.classList.add('block-deletable');
+        const del = document.createElement('button');
+        del.className = 'block-delete';
+        del.contentEditable = 'false';
+        del.textContent = '✕';
+        del.title = 'Delete block';
+        del.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          if (confirm('Delete this block?')) {
+            block.remove();
+            injectAddPoints(sec); // refresh
+          }
+        });
+        block.appendChild(del);
+      }
     });
 
     // One at the very end
@@ -3418,7 +3492,10 @@ window.DossierApp = (function() {
     lastPoint.contentEditable = 'false';
     lastPoint.addEventListener('click', function(e) {
       e.stopPropagation();
-      openPanel(lastPoint);
+      sec.querySelectorAll('.add-point.selected').forEach(p => p.classList.remove('selected'));
+      lastPoint.classList.add('selected');
+      _insertionTarget = lastPoint;
+      if (!panel.classList.contains('open')) openPanel(lastPoint);
     });
     // Append before colophon if it exists, otherwise at end
     const colophon = sec.querySelector('.colophon');
@@ -3432,6 +3509,11 @@ window.DossierApp = (function() {
   /* ── Clean up insertion points ── */
   function removeAddPoints(sec) {
     sec.querySelectorAll('.add-point').forEach(p => p.remove());
+    sec.querySelectorAll('.block-delete').forEach(b => b.remove());
+    sec.querySelectorAll('.block-deletable').forEach(b => {
+      b.classList.remove('block-deletable');
+      b.style.position = '';
+    });
   }
 
   /* ── Expose for section editor integration ── */
@@ -4012,10 +4094,14 @@ window.DossierApp = (function() {
     // so the browser's undo stack starts clean
     sec.contentEditable = 'true';
     sec.focus();
+
+    // Auto-open the ADD panel
+    if (window._openAddPanel) window._openAddPanel(null);
   }
 
   /* ── Cancel edit (restore original) ── */
   function doCancel(id, sec, editBtn, cancelBtn) {
+    if (window._closeAddPanel) window._closeAddPanel();
     sec.innerHTML = _originals[id];
     sec.contentEditable = 'false';
     sec.classList.remove('editing');
@@ -4026,6 +4112,7 @@ window.DossierApp = (function() {
 
   /* ── Save to Supabase ── */
   async function doSave(id, sec, editBtn, cancelBtn) {
+    if (window._closeAddPanel) window._closeAddPanel();
     // Remove insertion points before saving
     if (window._removeAddPoints) window._removeAddPoints(sec);
     // Clean up SVG editing state before saving
@@ -4047,7 +4134,7 @@ window.DossierApp = (function() {
     // Build clean HTML for Supabase (strip UI artifacts so they don't get baked in)
     const temp = document.createElement('div');
     temp.innerHTML = sec.innerHTML;
-    temp.querySelectorAll('.section-edit-btn, .add-point, .table-controls, .svg-edit-hint').forEach(el => el.remove());
+    temp.querySelectorAll('.section-edit-btn, .add-point, .table-controls, .svg-edit-hint, .block-delete').forEach(el => el.remove());
     const cleanHtml = temp.innerHTML;
 
     try {
@@ -4095,7 +4182,7 @@ window.DossierApp = (function() {
           // Strip any baked-in UI artifacts from saved HTML before injecting
           const temp = document.createElement('div');
           temp.innerHTML = row.html;
-          temp.querySelectorAll('.section-edit-btn, .add-point, .table-controls, .svg-edit-hint').forEach(el => el.remove());
+          temp.querySelectorAll('.section-edit-btn, .add-point, .table-controls, .svg-edit-hint, .block-delete').forEach(el => el.remove());
           sec.innerHTML = temp.innerHTML;
           wireSection(sec);
         }
