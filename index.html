@@ -48,6 +48,16 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
 
+  /* Phase 0 — prevent long URLs / text from overflowing containers */
+  .prose, .prose p, .prose a,
+  .kv dd, .kv dt,
+  .stamp-card p,
+  .status-list li span,
+  .colophon p {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
   body {
     background: var(--paper);
     color: var(--ink);
@@ -985,9 +995,9 @@
   <div class="cover-strip"></div>
 
   <div class="cover-head">
-    <div class="left">Project Dossier · v5</div>
+    <div class="left">Project Dossier · v6</div>
     <div class="center">DOC&nbsp;·&nbsp;YO&#8209;001</div>
-    <div class="right">Compiled 15 May 2026</div>
+    <div class="right">Compiled 20 May 2026</div>
   </div>
 
   <!-- watermark van behind everything -->
@@ -1054,7 +1064,7 @@
       </div>
       <div>
         <dt>Date</dt>
-        <dd>15 May 2026<br><span class="meta-sub">v5 · revision live</span></dd>
+        <dd>20 May 2026<br><span class="meta-sub">v6 · revision live</span></dd>
       </div>
     </dl>
   </div>
@@ -1075,15 +1085,15 @@
   <div class="toc">
     <h2 class="toc-title">Contents</h2>
     <ol class="toc-list">
-      <li><a href="#sec-01"><span class="toc-num">§ 01</span><span class="toc-name">Vehicle Identity<span>VIN, registration, ownership history</span></span><span class="toc-page">04</span></a></li>
-      <li><a href="#sec-02"><span class="toc-num">§ 02</span><span class="toc-name">Drivetrain &amp; Powertrain<span>EJ22 swap, transmission, tires</span></span><span class="toc-page">05</span></a></li>
-      <li><a href="#sec-03"><span class="toc-num">§ 03</span><span class="toc-name">Electrical System<span>Starter, house, solar, charge paths</span></span><span class="toc-page">06</span></a></li>
-      <li><a href="#sec-04"><span class="toc-num">§ 04</span><span class="toc-name">Bench &amp; Bed Assembly<span>Structural drawings, foam &amp; soft goods</span></span><span class="toc-page">09</span></a></li>
-      <li><a href="#sec-05"><span class="toc-num">§ 05</span><span class="toc-name">YoshiOS<span>Onboard compute &amp; telemetry</span></span><span class="toc-page">12</span></a></li>
-      <li><a href="#sec-06"><span class="toc-num">§ 06</span><span class="toc-name">Sound &amp; Insulation Strategy<span>Two stacks compared</span></span><span class="toc-page">15</span></a></li>
-      <li><a href="#sec-07"><span class="toc-num">§ 07</span><span class="toc-name">Service Record<span>Maintenance &amp; repair chronology</span></span><span class="toc-page">17</span></a></li>
-      <li><a href="#sec-08"><span class="toc-num">§ 08</span><span class="toc-name">Open Items &amp; To-Do<span>Exterior, interior, mechanical</span></span><span class="toc-page">19</span></a></li>
-      <li><a href="#sec-09"><span class="toc-num">§ 09</span><span class="toc-name">Material Resources<span>Standing references</span></span><span class="toc-page">21</span></a></li>
+      <li><a href="#sec-01"><span class="toc-num">§ 01</span><span class="toc-name">Vehicle Identity<span>VIN · Registration · Ownership</span></span><span class="toc-page">04</span></a></li>
+      <li><a href="#sec-02"><span class="toc-num">§ 02</span><span class="toc-name">Drivetrain &amp; Powertrain<span>EJ22 Swap · Transmission · Tires</span></span><span class="toc-page">05</span></a></li>
+      <li><a href="#sec-03"><span class="toc-num">§ 03</span><span class="toc-name">Electrical System<span>Starter · House · Solar · Charge Paths</span></span><span class="toc-page">06</span></a></li>
+      <li><a href="#sec-04"><span class="toc-num">§ 04</span><span class="toc-name">Bench &amp; Bed Assembly<span>Structural · Foam · Soft Goods</span></span><span class="toc-page">09</span></a></li>
+      <li><a href="#sec-05"><span class="toc-num">§ 05</span><span class="toc-name">YoshiOS<span>Onboard Compute · Telemetry</span></span><span class="toc-page">12</span></a></li>
+      <li><a href="#sec-06"><span class="toc-num">§ 06</span><span class="toc-name">Sound &amp; Insulation Strategy<span>Acoustic · Two Stacks Compared</span></span><span class="toc-page">15</span></a></li>
+      <li><a href="#sec-07"><span class="toc-num">§ 07</span><span class="toc-name">Service Record<span>Maintenance · Repair Chronology</span></span><span class="toc-page">17</span></a></li>
+      <li><a href="#sec-08"><span class="toc-num">§ 08</span><span class="toc-name">Open Items &amp; To-Do<span>Exterior · Interior · OS</span></span><span class="toc-page">19</span></a></li>
+      <li><a href="#sec-09"><span class="toc-num">§ 09</span><span class="toc-name">Material Resources<span>Standing References</span></span><span class="toc-page">21</span></a></li>
     </ol>
   </div>
 </div>
@@ -1102,7 +1112,7 @@
     <div class="section-head">
       <div class="section-num">§ 01</div>
       <div class="section-name">Vehicle Identity</div>
-      <div class="section-tag">Registration · Ownership</div>
+      <div class="section-tag">VIN · Registration · Ownership</div>
     </div>
 
     <div class="prose">
@@ -1136,7 +1146,7 @@
     <div class="section-head">
       <div class="section-num">§ 02</div>
       <div class="section-name">Drivetrain &amp; Powertrain</div>
-      <div class="section-tag">Engine · Trans · Tires</div>
+      <div class="section-tag">EJ22 Swap · Transmission · Tires</div>
     </div>
 
     <div class="prose">
@@ -1172,7 +1182,7 @@
     <div class="section-head">
       <div class="section-num">§ 03</div>
       <div class="section-name">Electrical System</div>
-      <div class="section-tag">Starter · House · Solar</div>
+      <div class="section-tag">Starter · House · Solar · Charge Paths</div>
     </div>
 
     <div class="prose">
@@ -1360,7 +1370,7 @@
     <div class="section-head">
       <div class="section-num">§ 04</div>
       <div class="section-name">Bench &amp; Bed Assembly</div>
-      <div class="section-tag">Stream A · Interior</div>
+      <div class="section-tag">Structural · Foam · Soft Goods</div>
     </div>
 
     <div class="prose">
@@ -1523,7 +1533,7 @@
     <div class="section-head">
       <div class="section-num">§ 05</div>
       <div class="section-name">YoshiOS</div>
-      <div class="section-tag">Stream B · Compute</div>
+      <div class="section-tag">Onboard Compute · Telemetry</div>
     </div>
 
     <div class="prose">
@@ -1769,7 +1779,7 @@
     <div class="section-head">
       <div class="section-num">§ 06</div>
       <div class="section-name">Sound &amp; Insulation Strategy</div>
-      <div class="section-tag">Stream A · Acoustic</div>
+      <div class="section-tag">Acoustic · Two Stacks Compared</div>
     </div>
 
     <div class="prose">
@@ -1862,7 +1872,7 @@
     <div class="section-head">
       <div class="section-num">§ 07</div>
       <div class="section-name">Service Record</div>
-      <div class="section-tag">Maintenance Chronology</div>
+      <div class="section-tag">Maintenance · Repair Chronology</div>
     </div>
 
     <div class="prose">
@@ -1958,11 +1968,56 @@
       </div>
       <div>
         <h5>Document</h5>
-        <p>Yoshi Project Dossier<br>v5 · compiled 15 May 2026<br>DOC · YO-001</p>
+        <p>Yoshi Project Dossier<br>v6 · compiled 20 May 2026<br>DOC · YO-001</p>
       </div>
     </div>
   </section>
 </div>
+
+<script>
+/* ─────────────────────────────────────────────
+   DossierApp — Shared scaffold (Phase 0)
+   Centralizes Supabase config, shared helpers.
+   ───────────────────────────────────────────── */
+window.DossierApp = (function() {
+  const SUPABASE_URL = 'https://odhvdtlhgvrpxcxsuzke.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kaHZkdGxoZ3ZycHhjeHN1emtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDAyNDgsImV4cCI6MjA5NDcxNjI0OH0.b3Df-ifRyqKECA2PV0cFHTj12KK6xMzaZu_w7xN99uU';
+
+  const VERSION = 'v6';
+  const COMPILED = '20 May 2026';
+
+  /* Shared Supabase REST helper */
+  function sb(path, opts) {
+    return fetch(SUPABASE_URL + '/rest/v1/' + path, Object.assign({
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      }
+    }, opts));
+  }
+
+  /* Supabase Storage helper */
+  function storage(path, opts) {
+    return fetch(SUPABASE_URL + '/storage/v1/' + path, Object.assign({
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY
+      }
+    }, opts));
+  }
+
+  return {
+    URL: SUPABASE_URL,
+    KEY: SUPABASE_KEY,
+    VERSION: VERSION,
+    COMPILED: COMPILED,
+    sb: sb,
+    storage: storage
+  };
+})();
+</script>
 
 <script>
 /* ─────────────────────────────────────────────
