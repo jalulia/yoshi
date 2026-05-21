@@ -1,11 +1,11 @@
-# Yoshi Dossier — v7.0 Build Reference
+# Yoshi Dossier — v7.1 Build Reference
 
-**Document:** `index.html` (~4815 lines, single self-contained file)
+**Document:** `index.html` (~4820 lines, single self-contained file)
 **Hosted:** https://jalulia.github.io/yoshi
 **Repo:** github.com/jalulia/yoshi (GitHub Pages, `main` branch)
 **Backend:** Supabase (Postgres + Storage)
 **Supabase URL:** `https://odhvdtlhgvrpxcxsuzke.supabase.co`
-**Started:** v4 (16 Apr 2026) → v7.0 (21 May 2026)
+**Started:** v4 (16 Apr 2026) → v7.1 (21 May 2026)
 
 ---
 
@@ -87,7 +87,7 @@ Single HTML file. No build step, no frameworks, no npm. All CSS in one `<style>`
 | `image` | ▣ Image / figure | Upload zone (drag/drop + browse + title/desc fields) |
 | `table` | ⊞ Table | `.compare` > `<table>` (2×2 default) + row/col controls |
 | `kv` | = Key-value pair | `.kv` > `<dl><dt><dd>` |
-| `linkcard` | ↗ Link card | `<a class="link-card">` with editable title, desc, URL |
+| `linkcard` | ↗ Link card | `<div class="link-card">` with editable title, desc, URL. Clickable in view mode via delegated JS handler (not `<a>` tag — avoids navigation conflicts in edit mode). |
 
 ### Block Delete
 - **Always visible** — ✕ button on right edge of every content block in edit mode.
@@ -221,6 +221,7 @@ DossierApp.storage('object/dossier-files/' + path, {
 | Save button lost on scroll | Sticky header only works within section bounds | Added Save/Cancel to the ADD panel (fixed-position, always visible) |
 | SVG path corrupted by version bump | `sed "s/v6.2/v6.3/g"` matched `v6.24` in SVG path data | Use context-aware sed patterns targeting surrounding text |
 | No way to edit uploaded figure caption | Only delete was available, no edit flow | Added ✎ button → inline title/desc editing with Save |
+| Link card bounces to `#` on click | Used `<a>` tag — clicks navigate even in edit mode, `contenteditable` conflicts | Changed to `<div>` with `data-href`, delegated click handler navigates only in view mode |
 | Confirm modals feel hostile | `window.confirm()` is jarring | Two-state click: first click arms (red "delete?"), second click executes, auto-resets after 2s |
 
 ---
