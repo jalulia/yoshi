@@ -1148,34 +1148,41 @@
     color: var(--paper);
   }
 
-  /* Block delete button — shows on hover in edit mode */
+  /* Block delete button — always visible right-edge in edit mode */
   .block-delete {
     position: absolute;
     top: 4px;
-    right: 4px;
+    right: -28px;
     width: 22px;
     height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--ink-faint);
     background: var(--paper);
     border: 0.5px solid var(--rule);
     border-radius: 2px;
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
     z-index: 5;
     user-select: none;
   }
-  section.editing .block-deletable:hover > .block-delete,
-  section.editing .block-delete:hover {
-    opacity: 1;
-  }
+  section.editing .block-delete { opacity: 1; }
   .block-delete:hover {
     color: var(--signal);
     border-color: var(--signal);
+  }
+  .block-delete.confirm-state {
+    color: var(--paper);
+    background: var(--signal);
+    border-color: var(--signal);
+    font-family: var(--mono);
+    font-size: 7px;
+    letter-spacing: 0.06em;
+    width: auto;
+    padding: 0 6px;
+    right: -60px;
   }
 
   /* ── File upload zone (Phase 5) ── */
@@ -1288,34 +1295,24 @@
     background: #f4f4f2;
   }
 
-  /* ── ADD panel (Phase 4) ── */
+  /* ── ADD panel (Phase 4) — persistent sidebar, no overlay ── */
   .add-panel-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 849;
-    background: rgba(0,0,0,0.06);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-  .add-panel-overlay.open {
-    opacity: 1;
-    pointer-events: auto;
+    display: none; /* removed — panel doesn't block content */
   }
   .add-panel {
     position: fixed;
     top: 0;
     left: 0;
     z-index: 850;
-    width: 240px;
+    width: 220px;
     height: 100vh;
     background: var(--paper);
     border-right: 0.5px solid var(--rule);
-    box-shadow: 4px 0 24px rgba(0,0,0,0.08);
+    box-shadow: 2px 0 12px rgba(0,0,0,0.06);
     transform: translateX(-100%);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
-    padding: 24px 16px 32px;
+    padding: 20px 14px 32px;
   }
   .add-panel.open { transform: translateX(0); }
 
@@ -1734,7 +1731,7 @@
   <div class="cover-strip"></div>
 
   <div class="cover-head">
-    <div class="left">Project Dossier · v6.3</div>
+    <div class="left">Project Dossier · v6.4</div>
     <div class="center">DOC&nbsp;·&nbsp;YO&#8209;001</div>
     <div class="right">Compiled 21 May 2026</div>
   </div>
@@ -1803,7 +1800,7 @@
       </div>
       <div>
         <dt>Date</dt>
-        <dd>21 May 2026<br><span class="meta-sub">v6.3 · revision live</span></dd>
+        <dd>21 May 2026<br><span class="meta-sub">v6.4 · revision live</span></dd>
       </div>
     </dl>
   </div>
@@ -2707,7 +2704,7 @@
       </div>
       <div>
         <h5>Document</h5>
-        <p>Yoshi Project Dossier<br>v6.3 · compiled 21 May 2026<br>DOC · YO-001</p>
+        <p>Yoshi Project Dossier<br>v6.4 · compiled 21 May 2026<br>DOC · YO-001</p>
       </div>
     </div>
   </section>
@@ -2722,7 +2719,7 @@ window.DossierApp = (function() {
   const SUPABASE_URL = 'https://odhvdtlhgvrpxcxsuzke.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kaHZkdGxoZ3ZycHhjeHN1emtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDAyNDgsImV4cCI6MjA5NDcxNjI0OH0.b3Df-ifRyqKECA2PV0cFHTj12KK6xMzaZu_w7xN99uU';
 
-  const VERSION = 'v6.3';
+  const VERSION = 'v6.4';
   const COMPILED = '21 May 2026';
 
   /* Shared Supabase REST helper */
@@ -3435,19 +3432,16 @@ window.DossierApp = (function() {
     '</div>';
   document.body.appendChild(panel);
 
-  /* ── Open / close ── */
+  /* ── Open / close — persistent sidebar, no overlay ── */
   function openPanel(insertionPoint) {
     _insertionTarget = insertionPoint || null;
     panel.classList.add('open');
-    overlay.classList.add('open');
   }
   function closePanel() {
     panel.classList.remove('open');
-    overlay.classList.remove('open');
     _insertionTarget = null;
   }
 
-  overlay.addEventListener('click', closePanel);
   panel.querySelector('.add-panel-close').addEventListener('click', closePanel);
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && panel.classList.contains('open')) closePanel();
@@ -3669,10 +3663,18 @@ window.DossierApp = (function() {
   /* ── Render uploaded file in figure block ── */
   function renderUploadedFile(figureEl, url, fileType, title, desc, filename) {
     figureEl.style.position = 'relative';
+    figureEl.dataset.fileUrl = url;
+    figureEl.dataset.fileType = fileType;
+    figureEl.dataset.fileName = filename;
     const captionParts = [];
     if (title) captionParts.push(title);
     if (desc) captionParts.push(desc);
     const captionText = captionParts.join(' — ') || filename;
+    const actionsHtml =
+      '<div class="fig-actions">' +
+        '<button class="fig-action-btn fig-edit-btn" title="Edit caption">✎</button>' +
+        '<button class="fig-action-btn fig-delete-btn" title="Delete">🗑</button>' +
+      '</div>';
 
     if (fileType === 'glb') {
       figureEl.innerHTML =
@@ -3680,30 +3682,63 @@ window.DossierApp = (function() {
           '<canvas class="fig-3d-canvas" data-glb-url="' + url + '"></canvas>' +
           '<span class="fig-3d-badge">3D</span>' +
         '</div>' +
-        '<div class="fig-cap"><span class="fig-label">Fig.</span> ' + captionText + '</div>' +
-        '<div class="fig-actions">' +
-          '<button class="fig-action-btn fig-delete-btn" title="Delete">🗑</button>' +
-        '</div>';
-      // Lazy-load Three.js and init viewer
+        '<div class="fig-cap" data-title="' + (title||'').replace(/"/g,'&quot;') + '" data-desc="' + (desc||'').replace(/"/g,'&quot;') + '"><span class="fig-label">Fig.</span> ' + captionText + '</div>' +
+        actionsHtml;
       initGlbViewer(figureEl.querySelector('.fig-3d-canvas'));
     } else {
       figureEl.innerHTML =
         '<div class="fig-frame"><img src="' + url + '" alt="' + (title || filename) + '" style="width:100%;display:block;border-radius:2px;" /></div>' +
-        '<div class="fig-cap"><span class="fig-label">Fig.</span> ' + captionText + '</div>' +
-        '<div class="fig-actions">' +
-          '<button class="fig-action-btn fig-delete-btn" title="Delete">🗑</button>' +
-        '</div>';
+        '<div class="fig-cap" data-title="' + (title||'').replace(/"/g,'&quot;') + '" data-desc="' + (desc||'').replace(/"/g,'&quot;') + '"><span class="fig-label">Fig.</span> ' + captionText + '</div>' +
+        actionsHtml;
     }
 
-    // Wire delete button
+    // Wire edit button — inline title/desc editing
+    const editBtn = figureEl.querySelector('.fig-edit-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const cap = figureEl.querySelector('.fig-cap');
+        const curTitle = cap.dataset.title || '';
+        const curDesc = cap.dataset.desc || '';
+        cap.innerHTML =
+          '<div class="fig-upload-fields" style="justify-content:flex-start;margin:0;">' +
+            '<input type="text" value="' + curTitle.replace(/"/g,'&quot;') + '" placeholder="Title" class="fig-title-input" />' +
+            '<input type="text" value="' + curDesc.replace(/"/g,'&quot;') + '" placeholder="Description" class="fig-desc-input" />' +
+            '<button class="fig-browse-btn" style="font-size:9px;padding:4px 10px;">Save</button>' +
+          '</div>';
+        const saveCapBtn = cap.querySelector('.fig-browse-btn');
+        saveCapBtn.addEventListener('click', function() {
+          const newTitle = cap.querySelector('.fig-title-input').value.trim();
+          const newDesc = cap.querySelector('.fig-desc-input').value.trim();
+          const newParts = [];
+          if (newTitle) newParts.push(newTitle);
+          if (newDesc) newParts.push(newDesc);
+          cap.dataset.title = newTitle;
+          cap.dataset.desc = newDesc;
+          cap.innerHTML = '<span class="fig-label">Fig.</span> ' + (newParts.join(' — ') || figureEl.dataset.fileName);
+        });
+      });
+    }
+
+    // Wire delete button — two-state click
     const delBtn = figureEl.querySelector('.fig-delete-btn');
     if (delBtn) {
+      let figArmed = false;
       delBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        if (confirm('Delete this figure?')) {
+        if (figArmed) {
           const sec = figureEl.closest('section.section');
           figureEl.remove();
           if (sec && window._injectAddPoints) window._injectAddPoints(sec);
+        } else {
+          figArmed = true;
+          delBtn.textContent = '✕';
+          delBtn.style.color = 'var(--paper)';
+          delBtn.style.background = 'var(--signal)';
+          delBtn.style.borderColor = 'var(--signal)';
+          setTimeout(function() {
+            if (figArmed) { figArmed = false; delBtn.textContent = '🗑'; delBtn.style = ''; }
+          }, 2000);
         }
       });
     }
@@ -3816,13 +3851,22 @@ window.DossierApp = (function() {
         del.contentEditable = 'false';
         del.textContent = '✕';
         del.title = 'Delete block';
+        let armed = false;
         del.addEventListener('click', function(e) {
           e.stopPropagation();
           e.preventDefault();
-          if (confirm('Delete this block?')) {
+          if (armed) {
             pushBlockUndo(sec);
             block.remove();
-            injectAddPoints(sec); // refresh
+            injectAddPoints(sec);
+          } else {
+            armed = true;
+            del.textContent = 'delete?';
+            del.classList.add('confirm-state');
+            // Reset after 2 seconds if not clicked again
+            setTimeout(function() {
+              if (armed) { armed = false; del.textContent = '✕'; del.classList.remove('confirm-state'); }
+            }, 2000);
           }
         });
         block.appendChild(del);
