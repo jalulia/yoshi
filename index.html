@@ -854,6 +854,105 @@
     opacity: 1;
   }
 
+  /* ── Floating formatting bar (Phase 2) ── */
+  .fmt-bar {
+    position: absolute;
+    z-index: 800;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--ink);
+    border-radius: 4px;
+    padding: 4px 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: opacity 0.12s, transform 0.12s;
+  }
+  .fmt-bar.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .fmt-bar::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--ink);
+    border-bottom: none;
+  }
+  .fmt-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 26px;
+    background: none;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--paper);
+    font-size: 13px;
+    font-family: var(--serif);
+    line-height: 1;
+    transition: background 0.1s;
+  }
+  .fmt-btn:hover { background: rgba(255,255,255,0.15); }
+  .fmt-btn.active { background: rgba(255,255,255,0.22); }
+  .fmt-btn svg {
+    width: 15px;
+    height: 15px;
+    stroke: var(--paper);
+    stroke-width: 1.8;
+    fill: none;
+  }
+  .fmt-sep {
+    width: 1px;
+    height: 18px;
+    background: rgba(255,255,255,0.2);
+    margin: 0 3px;
+  }
+  /* Link input popover */
+  .fmt-link-input {
+    display: flex;
+    gap: 4px;
+    padding: 4px 6px;
+    background: var(--ink);
+    border-radius: 4px;
+  }
+  .fmt-link-input input {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--paper);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 3px;
+    padding: 3px 8px;
+    width: 220px;
+    outline: none;
+  }
+  .fmt-link-input input:focus {
+    border-color: rgba(255,255,255,0.4);
+  }
+  .fmt-link-input input::placeholder { color: rgba(255,255,255,0.35); }
+  .fmt-link-input button {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 3px;
+    padding: 3px 10px;
+    cursor: pointer;
+  }
+  .fmt-link-input button:hover { background: rgba(255,255,255,0.25); }
+
   /* ── Quick-jump menu (Phase 1) ── */
   .qj-toggle {
     position: fixed;
@@ -2275,6 +2374,181 @@ window.DossierApp = (function() {
     if (e.key === 'Escape' && panel.classList.contains('open')) closeMenu();
   });
 })();
+
+/* ─────────────────────────────────────────────
+   Floating Formatting Bar (Phase 2)
+   Appears on text selection inside editing sections.
+   Bold · Italic · Link
+   ───────────────────────────────────────────── */
+(function() {
+  /* Build the bar */
+  const bar = document.createElement('div');
+  bar.className = 'fmt-bar';
+  bar.innerHTML =
+    '<button class="fmt-btn" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>' +
+    '<button class="fmt-btn" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>' +
+    '<div class="fmt-sep"></div>' +
+    '<button class="fmt-btn" data-cmd="link" title="Link (Ctrl+K)">' +
+      '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
+      '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' +
+    '</button>';
+  document.body.appendChild(bar);
+
+  /* Link input (shown when link button clicked) */
+  const linkPopover = document.createElement('div');
+  linkPopover.className = 'fmt-bar';
+  linkPopover.style.padding = '0';
+  linkPopover.innerHTML =
+    '<div class="fmt-link-input">' +
+      '<input type="url" placeholder="https://…" />' +
+      '<button>apply</button>' +
+    '</div>';
+  document.body.appendChild(linkPopover);
+  const linkInput = linkPopover.querySelector('input');
+  const linkApply = linkPopover.querySelector('button');
+
+  let _savedRange = null;
+
+  /* Position the bar above the selection */
+  function positionBar(targetBar) {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const barW = targetBar.offsetWidth || 140;
+    let left = rect.left + (rect.width / 2) - (barW / 2) + window.scrollX;
+    left = Math.max(8, Math.min(left, window.innerWidth - barW - 8));
+    targetBar.style.left = left + 'px';
+    targetBar.style.top = (rect.top + window.scrollY - 40) + 'px';
+  }
+
+  /* Show/hide */
+  function showBar() {
+    // Check active states
+    bar.querySelector('[data-cmd="bold"]').classList.toggle('active', document.queryCommandState('bold'));
+    bar.querySelector('[data-cmd="italic"]').classList.toggle('active', document.queryCommandState('italic'));
+    bar.classList.add('visible');
+    positionBar(bar);
+  }
+
+  function hideBar() {
+    bar.classList.remove('visible');
+    linkPopover.classList.remove('visible');
+  }
+
+  /* Detect selection inside editing sections */
+  document.addEventListener('selectionchange', () => {
+    const sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) { hideBar(); return; }
+
+    // Only show if selection is inside an editing section
+    const anchor = sel.anchorNode;
+    const editingSec = anchor && anchor.nodeType === 3
+      ? anchor.parentElement.closest('section.editing')
+      : (anchor && anchor.closest ? anchor.closest('section.editing') : null);
+    if (!editingSec) { hideBar(); return; }
+
+    // Don't show if inside an SVG
+    const inSvg = anchor.nodeType === 3
+      ? anchor.parentElement.closest('svg')
+      : (anchor.closest ? anchor.closest('svg') : null);
+    if (inSvg) { hideBar(); return; }
+
+    showBar();
+  });
+
+  /* Handle formatting commands */
+  bar.addEventListener('mousedown', function(e) {
+    e.preventDefault(); // prevent losing selection
+  });
+  bar.addEventListener('click', function(e) {
+    const btn = e.target.closest('.fmt-btn');
+    if (!btn) return;
+    const cmd = btn.dataset.cmd;
+
+    if (cmd === 'bold') {
+      document.execCommand('bold', false);
+      btn.classList.toggle('active');
+    } else if (cmd === 'italic') {
+      document.execCommand('italic', false);
+      btn.classList.toggle('active');
+    } else if (cmd === 'link') {
+      // Save selection, show link input
+      const sel = window.getSelection();
+      if (sel.rangeCount) _savedRange = sel.getRangeAt(0).cloneRange();
+      bar.classList.remove('visible');
+      linkPopover.classList.add('visible');
+      positionBar(linkPopover);
+      // Pre-fill if selection is already a link
+      const parentA = sel.anchorNode.parentElement.closest('a');
+      linkInput.value = parentA ? parentA.href : '';
+      linkInput.focus();
+      linkInput.select();
+    }
+  });
+
+  /* Apply link */
+  function applyLink() {
+    const url = linkInput.value.trim();
+    if (_savedRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(_savedRange);
+    }
+    if (url) {
+      document.execCommand('createLink', false, url);
+      // Set target="_blank" on the new link
+      const sel = window.getSelection();
+      if (sel.anchorNode) {
+        const a = sel.anchorNode.parentElement.closest('a');
+        if (a) a.setAttribute('target', '_blank');
+      }
+    } else {
+      document.execCommand('unlink', false);
+    }
+    linkPopover.classList.remove('visible');
+    _savedRange = null;
+  }
+
+  linkApply.addEventListener('click', applyLink);
+  linkInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); applyLink(); }
+    if (e.key === 'Escape') { linkPopover.classList.remove('visible'); }
+  });
+  linkPopover.addEventListener('mousedown', function(e) {
+    e.preventDefault(); // prevent losing selection
+  });
+
+  /* Keyboard shortcuts inside editing sections */
+  document.addEventListener('keydown', function(e) {
+    // Only when a section is being edited
+    if (!document.querySelector('section.editing')) return;
+    // Don't intercept if focus is in an input or the tracker
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+    if (document.getElementById('sec-08') && document.getElementById('sec-08').contains(document.activeElement)) return;
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      e.preventDefault();
+      document.execCommand('bold', false);
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+      e.preventDefault();
+      document.execCommand('italic', false);
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const sel = window.getSelection();
+      if (sel.rangeCount && !sel.isCollapsed) {
+        _savedRange = sel.getRangeAt(0).cloneRange();
+        bar.classList.remove('visible');
+        linkPopover.classList.add('visible');
+        positionBar(linkPopover);
+        linkInput.value = '';
+        linkInput.focus();
+      }
+    }
+  });
+})();
 </script>
 
 <script>
@@ -2693,7 +2967,13 @@ window.DossierApp = (function() {
   /* ── Undo button + keyboard ── */
   undoBtn.addEventListener('click', undo);
   document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      // Only intercept when focus is inside the tracker, otherwise let browser undo work
+      const sec08 = document.getElementById('sec-08');
+      if (sec08 && sec08.contains(document.activeElement)) {
+        e.preventDefault(); undo();
+      }
+    }
   });
 
   /* ── Init ── */
