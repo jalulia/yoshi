@@ -2,114 +2,85 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Yoshi Hill Run</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{overflow:hidden;touch-action:none;-webkit-touch-callout:none}
-  body{background:#4a7a2e;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
-  .gw{position:relative;width:100vw;height:100vh;overflow:hidden;background:#4a7a2e;touch-action:none;user-select:none;-webkit-user-select:none}
-  canvas{display:block;width:100%;height:100%}
+  html,body{overflow:hidden;touch-action:none;-webkit-touch-callout:none;background:#8BC34A}
+  body{display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+  .gw{position:relative;width:100vw;height:100vh;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+  canvas{
+    display:block;width:100%;height:100%;
+    image-rendering:pixelated;image-rendering:crisp-edges;
+  }
 
-  /* touch zone indicators */
-  .touch-zones{
-    display:none;position:absolute;inset:0;z-index:1;pointer-events:none;
-  }
-  .touch-zone{
-    position:absolute;top:0;bottom:0;
-    display:flex;align-items:center;justify-content:center;
-    font:300 28px/1 'DM Mono',monospace;color:rgba(0,0,0,.06);
-    transition:background .15s,color .15s;
-  }
+  .touch-zones{display:none;position:absolute;inset:0;z-index:1;pointer-events:none}
+  .touch-zone{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;
+    font:300 28px/1 'DM Mono',monospace;color:rgba(255,255,255,.08);transition:background .15s,color .15s}
   .touch-zone.left{left:0;width:33.3%}
   .touch-zone.mid{left:33.3%;width:33.4%}
   .touch-zone.right{right:0;width:33.3%}
-  .touch-zone.active{background:rgba(0,0,0,.04);color:rgba(0,0,0,.12)}
+  .touch-zone.active{background:rgba(255,255,255,.06);color:rgba(255,255,255,.15)}
+  @media(hover:none)and(pointer:coarse){.touch-zones.playing{display:flex}}
 
-  /* show zones on touch devices during play */
-  @media (hover:none) and (pointer:coarse){
-    .touch-zones.playing{display:flex}
-  }
+  .ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(120,180,60,.92);backdrop-filter:blur(2px);z-index:10;text-align:center;transition:opacity .5s}
+  .ov.hidden{opacity:0;pointer-events:none}
+  .ov h1{font:500 28px/1 'DM Mono',monospace;color:#fff;letter-spacing:.08em;margin-bottom:2px;text-shadow:2px 2px 0 rgba(0,0,0,.2)}
+  .ov .sub{font:300 10px/1 'DM Mono',monospace;color:rgba(255,255,255,.6);letter-spacing:.16em;text-transform:uppercase;margin-bottom:28px}
+  .ov .pr{font:400 13px/1.8 'DM Mono',monospace;color:#fff;letter-spacing:.06em;animation:blink 1.2s ease-in-out infinite}
+  .ov .ks{font:300 10px/2 'DM Mono',monospace;color:rgba(255,255,255,.5);margin-top:12px}
+  .ov .ks kbd{display:inline-block;border:1px solid rgba(255,255,255,.3);border-radius:3px;padding:2px 7px;font-size:10px;background:rgba(255,255,255,.1);color:#fff}
+  .ov .rsn{font:400 10px/1 'DM Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.6);text-transform:uppercase;margin-bottom:4px}
+  .ov .fs{font:500 42px/1.2 'DM Mono',monospace;color:#fff;letter-spacing:.04em;text-shadow:2px 2px 0 rgba(0,0,0,.2)}
+  .ov .fs small{font-size:14px;font-weight:300;color:rgba(255,255,255,.6);letter-spacing:.08em}
+  .ov .bl{font:400 11px/1 'DM Mono',monospace;color:rgba(255,255,255,.7);margin:6px 0 24px}
+  .ov .em{font:400 12px/1.6 'DM Mono',monospace;color:#FFFDE7;margin-bottom:10px}
+  .vt{margin-bottom:20px;opacity:.25}
 
-  .hud{
-    position:absolute;top:0;left:0;right:0;
-    display:flex;justify-content:center;gap:52px;
-    padding:12px 24px;
-    font:500 11px/1 'DM Mono',monospace;letter-spacing:.1em;color:#5A5A56;
-    pointer-events:none;z-index:2;
-  }
-  .hud .v{color:#E83A0C;font-weight:500}
-  .hud .fw{transition:color .2s}
-  .hud .fw.warn{color:#E83A0C;animation:pulse .5s infinite}
+  .hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;gap:40px;
+    padding:10px 20px;font:500 11px/1 'DM Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.7);
+    pointer-events:none;z-index:2;text-shadow:1px 1px 0 rgba(0,0,0,.2)}
+  .hud .v{color:#fff;font-weight:500}
+  .hud .fw.warn{animation:pulse .5s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
-  /* warning banner for yoshi approach */
-  .warn-banner{
-    position:absolute;top:50px;left:50%;transform:translateX(-50%);
-    font:500 13px/1 'DM Mono',monospace;letter-spacing:.18em;
-    color:#3A6830;background:rgba(194,207,168,.92);
-    padding:8px 28px;border:1.5px solid #3A6830;
-    pointer-events:none;z-index:3;opacity:0;transition:opacity .4s;
-    text-transform:uppercase;
-  }
+  .warn-banner{position:absolute;top:44px;left:50%;transform:translateX(-50%);
+    font:500 12px/1 'DM Mono',monospace;letter-spacing:.16em;color:#fff;background:rgba(0,0,0,.3);
+    padding:6px 22px;pointer-events:none;z-index:3;opacity:0;transition:opacity .4s;text-transform:uppercase}
   .warn-banner.show{opacity:1;animation:warnPulse 1s infinite}
-  @keyframes warnPulse{0%,100%{opacity:.9}50%{opacity:.5}}
-
-  .ov{
-    position:absolute;inset:0;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    background:rgba(252,252,250,.88);backdrop-filter:blur(2px);
-    z-index:10;text-align:center;transition:opacity .5s;
-  }
-  .ov.hidden{opacity:0;pointer-events:none}
-  .ov h1{font:500 32px/1 'DM Mono',monospace;color:#111;letter-spacing:.08em;margin-bottom:2px}
-  .ov .sub{font:300 10px/1 'DM Mono',monospace;color:#9A9994;letter-spacing:.16em;text-transform:uppercase;margin-bottom:32px}
-  .ov .pr{font:400 13px/1.8 'DM Mono',monospace;color:#E83A0C;letter-spacing:.06em;animation:blink 1.2s ease-in-out infinite}
-  .ov .ks{font:300 10px/2 'DM Mono',monospace;color:#9A9994;margin-top:14px}
-  .ov .ks kbd{display:inline-block;border:1px solid #E6E5E1;border-radius:3px;padding:2px 7px;font-size:10px;background:#fff;color:#5A5A56}
-  .ov .rsn{font:400 10px/1 'DM Mono',monospace;letter-spacing:.14em;color:#9A9994;text-transform:uppercase;margin-bottom:4px}
-  .ov .fs{font:500 42px/1.2 'DM Mono',monospace;color:#E83A0C;letter-spacing:.04em}
-  .ov .fs small{font-size:14px;font-weight:300;color:#9A9994;letter-spacing:.08em}
-  .ov .bl{font:400 11px/1 'DM Mono',monospace;color:#5A5A56;margin:6px 0 24px}
-  .ov .em{font:400 11px/1.6 'DM Mono',monospace;color:#3A6830;margin-bottom:12px}
-  .vt{margin-bottom:24px;opacity:.3}
+  @keyframes warnPulse{0%,100%{opacity:.85}50%{opacity:.4}}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 </style>
 </head>
 <body>
-
 <div class="gw" id="gw">
   <canvas id="c"></canvas>
-
   <div class="touch-zones" id="touchZones">
     <div class="touch-zone left" id="tzL">◂</div>
     <div class="touch-zone mid" id="tzM">↑</div>
     <div class="touch-zone right" id="tzR">▸</div>
   </div>
-
   <div class="hud">
-    <span>DIST <span class="v" id="hD">0</span> m</span>
-    <span>SPEED <span class="v" id="hS">·</span></span>
+    <span>DIST <span class="v" id="hD">0</span>m</span>
     <span class="fw" id="hFw">FUEL <span class="v" id="hF">100</span>%</span>
-    <span>BEST <span class="v" id="hB">0</span> m</span>
+    <span>BEST <span class="v" id="hB">0</span>m</span>
   </div>
-
   <div class="warn-banner" id="warnBanner">⚠ SOMETHING IS COMING ⚠</div>
 
   <div class="ov" id="titOv">
-    <svg class="vt" width="220" height="66" viewBox="0 0 740 335" fill="none" stroke="#C8C7C2" stroke-width="1.2">
+    <svg class="vt" width="180" height="54" viewBox="0 0 740 335" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.5">
       <path d="M219.6,284.73l-6.28-26.28c-3.15-13.15-10.84-24.48-21.67-31.89-3.84-2.63-13.06-4.15-15.28-4.15h-46.62c-3.52,0-8.47,1.92-11.11,3.07-9.78,4.28-17.17,12.66-20.28,22.98l-5.65,19.29h-56.5v2.08H.12v-19.46h24.57l-14.19-77.2h1.74v-16.54h-2.77L75.31,20.89h51.13l6.68,6.24h130.09v-6.24h18.77v6.24h181.82l3.68-6.24h137.15l27.31,23.31v4.69l67.34,84.84h9.11l23.57,27.62-2.98,53.11h-20.83c-4.49,0-8.65,2.44-10.85,6.36l-11.5,20.56h37.68l-.69,5.88h17.17v12.73c-.22,1.56-1.09,4.8-2.53,5.52-2.04.96-24.84,5.06-38.84,7.43h-7.76l.37-6.15-73.86,10.15-20.22-42.57c-3.44-7.27-10.87-11.96-18.92-11.96h-42.52c-2.52,0-14.8,2.37-19.2,6.32-13.36,11.98-21.4,28.61-22.62,46.84l-.62,9.15H219.6Z"/>
-      <path d="M553.32,334.58c-28.46,0-51.61-23.15-51.61-51.61s23.15-51.61,51.61-51.61,51.61,23.15,51.61,51.61-23.15,51.61-51.61,51.61ZM553.32,248.73c-18.88,0-34.24,15.36-34.24,34.24s15.36,34.24,34.24,34.24,34.24-15.36,34.24-34.24-15.36-34.24-34.24-34.24Z"/>
-      <path d="M153.86,334.58c-28.46,0-51.61-23.15-51.61-51.61s23.15-51.61,51.61-51.61,51.61,23.15,51.61,51.61-23.15,51.61-51.61,51.61ZM153.86,248.73c-18.88,0-34.24,15.36-34.24,34.24s15.36,34.24,34.24,34.24,34.24-15.36,34.24-34.24-15.36-34.24-34.24-34.24Z"/>
+      <path d="M553.32,334.58c-28.46,0-51.61-23.15-51.61-51.61s23.15-51.61,51.61-51.61,51.61,23.15,51.61,51.61-23.15,51.61-51.61,51.61Z"/>
+      <path d="M153.86,334.58c-28.46,0-51.61-23.15-51.61-51.61s23.15-51.61,51.61-51.61,51.61,23.15,51.61,51.61-23.15,51.61-51.61,51.61Z"/>
     </svg>
     <h1>YOSHI HILL RUN</h1>
     <div class="sub">1983 VW Vanagon GL Westfalia · downhill</div>
     <div class="pr" id="startPrompt">press any key or tap to start</div>
-    <div class="ks" id="ctrlHint"><kbd>←</kbd> <kbd>→</kbd> steer &nbsp;·&nbsp; <kbd>↑</kbd> boost &nbsp;·&nbsp; <kbd>SPACE</kbd> jump</div>
+    <div class="ks" id="ctrlHint"><kbd>←</kbd> <kbd>→</kbd> steer · <kbd>↑</kbd> boost · <kbd>SPACE</kbd> jump</div>
   </div>
 
   <div class="ov hidden" id="endOv">
@@ -122,721 +93,559 @@
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-//  YOSHI HILL RUN · v3
-//  SkiFree-style: descend from top, open mountain terrain
-//  After 600m — Yoshi appears. Run.
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+//  YOSHI HILL RUN v4 · true pixel · low-res canvas
+// ═══════════════════════════════════════════════
 
-const P = { // palette — flat, crude, SkiFree-faithful
-  grass:'#4a7a2e',  // flat field green
-  grassTuft:'#3d6926', // barely-darker grass pixel
-  ink:'#111', inkMid:'#5A5A56', inkLt:'#9A9994', inkFaint:'#C8C7C2',
-  signal:'#E83A0C', amber:'#F0AD3B',
-  treeDk:'#1a5c0a', treeLt:'#2d8a14',  // two flat greens, no gradient
-  trunk:'#5a3a1a',
-  rock:'#787872',
-  body:'#F2EDD8', bodyStroke:'#8A8678',
-  // yoshi dino
+// Internal pixel resolution — everything renders here, CSS scales up
+const IW = 384, IH = 216;
+
+const cv = document.getElementById('c');
+const cx = cv.getContext('2d');
+cv.width = IW; cv.height = IH;
+// Disable smoothing for crisp pixels
+cx.imageSmoothingEnabled = false;
+
+const W = IW, H = IH;
+
+// Palette
+const P = {
+  bg:'#8BC34A',       // light green field
+  tuft:'#7DB33E',     // slightly darker grass tuft
+  rock:'#6B6B60',     // dark enough to contrast on green
+  rockHi:'#8A8A7C',   // rock highlight
+  treeDk:'#2E7D14',   // dark tree green
+  treeLt:'#4CAF30',   // light tree green
+  trunk:'#5D4037',    // brown trunk
+  ink:'#222',
+  signal:'#E83A0C',
+  amber:'#F0AD3B',
+  // van
+  vBody:'#F0ECD0',    // ivory
+  vBodyDk:'#D8D4B8',  // ivory shadow side
+  vRoof:'#E0DCC4',    // pop-top
+  vGlass:'#4A6A7A',   // dark glass
+  vGlassHi:'#6A8A9A',
+  vStripe:'#D35400',  // orange stripe
+  vWheel:'#333',
+  vOutline:'#3A3630',
+  // yoshi
   yG:'#4CAF50', yGd:'#2E7D32', yGl:'#81C784',
   yW:'#FFFDE7', yR:'#E83A0C', yO:'#FF8A65',
 };
 
-const cv = document.getElementById('c');
-const cx = cv.getContext('2d');
-
-function resize() {
-  const g = document.getElementById('gw');
-  cv.width = g.clientWidth; cv.height = g.clientHeight;
+// ── pixel helper: draw a "sprite" from a 2D color array ──
+function drawSprite(data, x, y, flipX) {
+  cx.save();
+  cx.translate(Math.round(x), Math.round(y));
+  if (flipX) cx.scale(-1, 1);
+  for (let row = 0; row < data.length; row++) {
+    for (let col = 0; col < data[row].length; col++) {
+      const c = data[row][col];
+      if (c) {
+        cx.fillStyle = c;
+        cx.fillRect(col - Math.floor(data[0].length / 2), row - Math.floor(data.length / 2), 1, 1);
+      }
+    }
+  }
+  cx.restore();
 }
-window.addEventListener('resize', resize); resize();
 
-const W = () => cv.width, H = () => cv.height;
+// ── VAN SPRITE (14w x 14h pixels — stubby boxy T3 Vanagon) ──
+// Van faces DOWN (front=bottom). Ivory body, dark glass, orange stripe, pop-top, wheels.
+const _=null, O=P.vOutline, B=P.vBody, D=P.vBodyDk, R=P.vRoof, G=P.vGlass, H2=P.vGlassHi,
+      S=P.vStripe, WH=P.vWheel, A=P.amber, SG=P.signal, TL='#cc2200';
 
-// DOM
-const titOv = document.getElementById('titOv');
-const endOv = document.getElementById('endOv');
-const wBan  = document.getElementById('warnBanner');
-const hD = document.getElementById('hD'), hS = document.getElementById('hS');
-const hF = document.getElementById('hF'), hB = document.getElementById('hB');
-const hFw = document.getElementById('hFw');
-const eMsg = document.getElementById('eMsg'), eRsn = document.getElementById('eRsn');
-const eSc = document.getElementById('eSc'), eBst = document.getElementById('eBst');
+const vanSprite = [
+  // row 0: rear edge + taillights
+  [_,_,O,O,SG,O,O,O,O,SG,O,O,_,_],
+  // row 1: rear window
+  [_,_,O,G,G,G,G,G,G,G,G,O,_,_],
+  // row 2-3: pop-top
+  [_,WH,O,R,R,R,R,R,R,R,R,O,WH,_],
+  [_,WH,O,R,R,R,R,R,R,R,R,O,WH,_],
+  // row 4: stripe
+  [_,_,O,S,S,S,S,S,S,S,S,O,_,_],
+  // row 5-7: body
+  [_,_,O,B,B,B,D,D,B,B,B,O,_,_],
+  [_,_,O,B,B,B,D,D,B,B,B,O,_,_],
+  [_,_,O,B,B,B,B,B,B,B,B,O,_,_],
+  // row 8: stripe
+  [_,_,O,S,S,S,S,S,S,S,S,O,_,_],
+  // row 9-10: lower body + wheels
+  [_,WH,O,B,B,B,B,B,B,B,B,O,WH,_],
+  [_,WH,O,B,B,B,B,B,B,B,B,O,WH,_],
+  // row 11: windshield
+  [_,_,O,G,G,H2,G,G,H2,G,G,O,_,_],
+  // row 12: headlights + front
+  [_,_,O,A,A,B,B,B,B,A,A,O,_,_],
+  [_,_,_,O,O,O,O,O,O,O,O,_,_,_],
+];
 
-// ── state ──
-let mode = 'title', best = 0;
+// ── TREE SPRITE (8w x 14h) ──
+const TK=P.trunk, TD=P.treeDk, TL2=P.treeLt;
+const treeSprite = [
+  [_,_,_,TD,TD,_,_,_],
+  [_,_,TD,TD,TD,TD,_,_],
+  [_,TD,TD,TL2,TD,TD,TD,_],
+  [TD,TD,TL2,TD,TD,TD,TD,TD],
+  [_,_,_,TD,TD,_,_,_],
+  [_,_,TD,TD,TD,TD,_,_],
+  [_,TD,TD,TL2,TD,TD,TD,_],
+  [TD,TD,TD,TL2,TD,TD,TD,TD],
+  [_,TD,TD,TD,TD,TD,TD,_],
+  [_,_,TD,TD,TD,TD,_,_],
+  [_,_,_,TK,TK,_,_,_],
+  [_,_,_,TK,TK,_,_,_],
+  [_,_,_,TK,TK,_,_,_],
+];
+
+// ── ROCK SPRITE (8w x 5h) ──
+const RK=P.rock, RH=P.rockHi;
+const rockSprite = [
+  [_,_,RH,RH,RH,RH,_,_],
+  [_,RH,RH,RH,RH,RK,RK,_],
+  [RK,RH,RH,RK,RK,RK,RK,RK],
+  [RK,RK,RK,RK,RK,RK,RK,_],
+  [_,_,RK,RK,RK,RK,_,_],
+];
+
+// ── GAS CAN SPRITE (6w x 8h) ──
+const SIG=P.signal, WHT='#fff';
+const gasSprite = [
+  [_,_,SIG,SIG,_,_],
+  [_,SIG,WHT,SIG,SIG,_],
+  [_,SIG,SIG,SIG,SIG,_],
+  [SIG,SIG,WHT,SIG,SIG,SIG],
+  [SIG,SIG,SIG,SIG,SIG,SIG],
+  [SIG,SIG,WHT,WHT,SIG,SIG],
+  [SIG,SIG,SIG,SIG,SIG,SIG],
+  [_,SIG,SIG,SIG,SIG,_],
+];
+
+// ── WRENCH SPRITE (7w x 7h) ──
+const AM=P.amber, AMD='#C48A2A';
+const wrenchSprite = [
+  [_,_,_,_,_,AM,AM],
+  [_,_,_,_,AM,AMD,AM],
+  [_,_,_,AM,AM,AM,_],
+  [_,_,AM,AM,_,_,_],
+  [_,AM,AM,_,_,_,_],
+  [AM,AMD,AM,_,_,_,_],
+  [AM,AM,_,_,_,_,_],
+];
+
+// ── STATE ──
+const titOv=document.getElementById('titOv'),endOv=document.getElementById('endOv');
+const wBan=document.getElementById('warnBanner');
+const hD=document.getElementById('hD'),hF=document.getElementById('hF'),hB=document.getElementById('hB');
+const hFw=document.getElementById('hFw');
+const eMsg=document.getElementById('eMsg'),eRsn=document.getElementById('eRsn');
+const eSc=document.getElementById('eSc'),eBst=document.getElementById('eBst');
+const touchZones=document.getElementById('touchZones');
+const tzL=document.getElementById('tzL'),tzM=document.getElementById('tzM'),tzR=document.getElementById('tzR');
+
+let mode='title', best=0;
 let van, obs, pix, parts, dust;
 let spd, dist, fuel, tilt, inv;
+let jumpT, jumpCool;
 let yoshi, yoshiWarned, yoshiActive, yoshiAte;
-let jumpT, jumpCool; // 0 = grounded, >0 = airborne frames
-let keys = {}, shakeT = 0, deathTime = 0;
-let touchX = null, touchDir = 0;
-let frame = 0;
+let keys={}, shakeT=0, deathTime=0, frame=0;
+let touchDir=0, activeTouches={};
 
-const YOSHI_DIST = 600;  // distance to trigger
-const YOSHI_WARN = 500;  // warning distance
+const YOSHI_WARN=500, YOSHI_DIST=600;
 
 function init() {
-  van = { x: W() / 2, y: H() * 0.25, w: 39, h: 54, vx: 0 };
-  obs = []; pix = []; parts = []; dust = [];
-  spd = 2.5; dist = 0; fuel = 100; tilt = 0; inv = 0; shakeT = 0; frame = 0;
-  jumpT = 0; jumpCool = 0; // jump state
-  yoshi = null; yoshiWarned = false; yoshiActive = false; yoshiAte = false;
+  van = { x: W/2, y: H*0.22, w: 12, h: 12, vx: 0 };
+  obs=[]; pix=[]; parts=[]; dust=[];
+  spd=1.8; dist=0; fuel=100; tilt=0; inv=0; shakeT=0; frame=0;
+  jumpT=0; jumpCool=0;
+  yoshi=null; yoshiWarned=false; yoshiActive=false; yoshiAte=false;
   wBan.classList.remove('show');
-
-  // pre-populate terrain — safe zone: nothing spawns within 220px below van
-  const safeY = van.y + 220;
-  for (let i = 0; i < 16; i++) {
-    spawnTerrain(safeY + Math.random() * (H() - safeY + 300));
-  }
+  // pre-populate terrain — safe zone of 60px below van
+  const safeY = van.y + 60;
+  for (let i=0; i<14; i++) spawnTerrain(safeY + Math.random()*(H - safeY + 120));
 }
 
-// ── terrain generation ──
+// ── TERRAIN ──
 
 function spawnTerrain(atY) {
-  const w = W();
-  const y = atY !== undefined ? atY : H() + 20 + Math.random() * 60;
+  const y = atY !== undefined ? atY : H + 10 + Math.random()*40;
   const r = Math.random();
-
-  if (r < 0.35) {
-    // evergreen tree
-    const s = 0.7 + Math.random() * 0.7;
-    obs.push({ t:'tree', x: 30 + Math.random() * (w - 60), y, s, hw: 10 * s, hh: 14 * s });
-  } else if (r < 0.55) {
-    // rock
-    const s = 0.6 + Math.random() * 0.6;
-    obs.push({ t:'rock', x: 40 + Math.random() * (w - 80), y, s, hw: 9 * s, hh: 8 * s });
-  } else if (r < 0.65) {
-    // tree cluster (2 trees close together)
-    const bx = 60 + Math.random() * (w - 120);
-    for (let i = 0; i < 2; i++) {
-      const s = 0.6 + Math.random() * 0.5;
-      obs.push({ t:'tree', x: bx + (Math.random() - 0.5) * 60, y: y + (Math.random() - 0.5) * 35, s, hw: 10 * s, hh: 14 * s });
-    }
-  } else if (r < 0.72) {
-    // boulder cluster
-    const bx = 50 + Math.random() * (w - 100);
-    for (let i = 0; i < 2; i++) {
-      const s = 0.5 + Math.random() * 0.4;
-      obs.push({ t:'rock', x: bx + (Math.random() - 0.5) * 45, y: y + (Math.random() - 0.5) * 25, s, hw: 9 * s, hh: 8 * s });
-    }
+  if (r < .35) {
+    obs.push({ t:'tree', x: 10+Math.random()*(W-20), y, hw:3, hh:5 });
+  } else if (r < .55) {
+    obs.push({ t:'rock', x: 14+Math.random()*(W-28), y, hw:3, hh:2 });
+  } else if (r < .65) {
+    // tree pair
+    const bx = 20+Math.random()*(W-40);
+    obs.push({ t:'tree', x:bx-10, y:y+Math.random()*8, hw:3, hh:5 });
+    obs.push({ t:'tree', x:bx+10, y:y+Math.random()*8, hw:3, hh:5 });
+  } else if (r < .72) {
+    obs.push({ t:'rock', x: 14+Math.random()*(W-28), y, hw:3, hh:2 });
+    obs.push({ t:'rock', x: 14+Math.random()*(W-28), y:y+4+Math.random()*6, hw:3, hh:2 });
   } else {
-    // small bush / shrub (no collision, decoration)
-    obs.push({ t:'bush', x: 20 + Math.random() * (w - 40), y, s: 0.5 + Math.random() * 0.5, hw: 0, hh: 0 });
+    // bush (decoration, no collision)
+    obs.push({ t:'bush', x: 8+Math.random()*(W-16), y, hw:0, hh:0 });
   }
 }
 
 function spawnPickup() {
-  const w = W();
-  const x = 60 + Math.random() * (w - 120);
-  pix.push({ t: Math.random() < 0.7 ? 'gas' : 'wrench', x, y: H() + 15, w: 14, h: 14 });
+  const x = 20+Math.random()*(W-40);
+  pix.push({ t: Math.random()<.7?'gas':'wrench', x, y:H+8, w:4, h:4 });
 }
 
-// ── drawing ──
+// ── DRAW HELPERS ──
 
-function drawVan(x, y, lean) {
-  cx.save(); cx.translate(x, y); cx.rotate(lean * 0.025);
-  cx.scale(0.85, 0.85);  // 15% smaller
-  const w = 21, h = 33;
+function drawPixTree(x, y) { drawSprite(treeSprite, x, y); }
+function drawPixRock(x, y) { drawSprite(rockSprite, x, y); }
+function drawPixGas(x, y)  { drawSprite(gasSprite, x, y + Math.round(Math.sin(frame*.1)*1.5)); }
+function drawPixWrench(x, y) { drawSprite(wrenchSprite, x, y + Math.round(Math.sin(frame*.1+1)*1.5)); }
 
-  // body — van faces DOWN the hill (front at bottom)
-  cx.fillStyle = P.body; cx.strokeStyle = P.bodyStroke;
-  cx.lineWidth = 1.4; cx.lineJoin = 'round';
-  cx.beginPath();
-  cx.moveTo(-w, -h + 8); cx.lineTo(-w + 4, -h); cx.lineTo(w - 4, -h);
-  cx.lineTo(w, -h + 8); cx.lineTo(w, h - 5); cx.lineTo(w - 3, h);
-  cx.lineTo(-w + 3, h); cx.lineTo(-w, h - 5); cx.closePath();
-  cx.fill(); cx.stroke();
-
-  // pop-top (rear/top of van as seen from above)
-  cx.fillStyle = '#E8E3D0'; cx.strokeStyle = P.inkFaint; cx.lineWidth = .8;
-  cx.fillRect(-16, -24, 32, 20); cx.strokeRect(-16, -24, 32, 20);
-
-  // rear window (top of sprite = back of van)
-  cx.fillStyle = 'rgba(160,195,215,.3)';
-  cx.fillRect(-13, -h + 2, 26, 10);
-
-  // windshield (bottom of sprite = front, facing downhill)
-  cx.fillStyle = 'rgba(160,195,215,.45)';
-  cx.fillRect(-15, h - 14, 30, 12);
-  cx.strokeStyle = P.inkFaint; cx.lineWidth = .7;
-  cx.strokeRect(-15, h - 14, 30, 12);
-  cx.beginPath(); cx.moveTo(0, h - 14); cx.lineTo(0, h - 2);
-  cx.lineWidth = .5; cx.stroke();
-
-  // belt line
-  cx.fillStyle = P.signal; cx.globalAlpha = .6;
-  cx.fillRect(-w - .5, -1, w * 2 + 1, 3); cx.globalAlpha = 1;
-
-  // wheels
-  cx.fillStyle = '#2A2A2A';
-  [[-w - 4, -16, 5.5, 11], [w - 1.5, -16, 5.5, 11],
-   [-w - 4, 11, 5.5, 11], [w - 1.5, 11, 5.5, 11]].forEach(([rx, ry, rw, rh]) => {
-    cx.beginPath(); cx.roundRect(rx, ry, rw, rh, 2); cx.fill();
-  });
-
-  // headlights at bottom (downhill-facing)
-  cx.fillStyle = P.amber;
-  cx.fillRect(-14, h - 1, 7, 4); cx.fillRect(7, h - 1, 7, 4);
-
-  // taillights at top
-  cx.fillStyle = P.signal;
-  cx.fillRect(-16, -h - 2, 7, 3.5); cx.fillRect(9, -h - 2, 7, 3.5);
-
-  // VW badge (rear, top)
-  cx.strokeStyle = P.inkFaint; cx.lineWidth = .6;
-  cx.beginPath(); cx.arc(0, -h + 8, 3.5, 0, Math.PI * 2); cx.stroke();
-
-  cx.restore();
-}
-
-function drawTree(x, y, s) {
-  cx.save(); cx.translate(x, y); s = s || 1;
-  // crude trunk
-  cx.fillStyle = P.trunk;
-  cx.fillRect(-2 * s, 2 * s, 4 * s, 12 * s);
-  // two flat triangles, no gradient
+function drawPixBush(x, y) {
+  cx.fillStyle = P.treeLt;
+  cx.fillRect(Math.round(x)-2, Math.round(y)-1, 5, 3);
   cx.fillStyle = P.treeDk;
-  cx.beginPath();
-  cx.moveTo(0, (-24) * s);
-  cx.lineTo((-12) * s, (-4) * s);
-  cx.lineTo((12) * s, (-4) * s);
-  cx.closePath(); cx.fill();
-  cx.fillStyle = P.treeLt;
-  cx.beginPath();
-  cx.moveTo(0, (-16) * s);
-  cx.lineTo((-14) * s, (6) * s);
-  cx.lineTo((14) * s, (6) * s);
-  cx.closePath(); cx.fill();
-  cx.restore();
+  cx.fillRect(Math.round(x)-1, Math.round(y)-2, 3, 1);
 }
 
-function drawRock(x, y, s) {
-  cx.save(); cx.translate(x, y); s = s || 1;
-  cx.fillStyle = P.rock;
-  cx.beginPath();
-  cx.moveTo(-9 * s, 3 * s); cx.lineTo(-7 * s, -6 * s); cx.lineTo(2 * s, -8 * s);
-  cx.lineTo(10 * s, -4 * s); cx.lineTo(8 * s, 4 * s); cx.closePath();
-  cx.fill();
-  cx.restore();
-}
+function drawPixVan(x, y) { drawSprite(vanSprite, Math.round(x), Math.round(y)); }
 
-function drawBush(x, y, s) {
-  cx.save(); cx.translate(x, y); s = s || 1;
-  cx.fillStyle = P.treeLt;
-  cx.beginPath(); cx.ellipse(0, 0, 6 * s, 4 * s, 0, 0, Math.PI * 2); cx.fill();
-  cx.restore();
-}
+// ── YOSHI DINO (pixel art, ~16x20) ──
+function drawPixYoshi(x, y) {
+  const YG=P.yG, YD=P.yGd, YL=P.yGl, YW=P.yW, YR=P.yR, YO=P.yO;
+  const leg = Math.sin(frame*.3) > 0;
+  cx.save(); cx.translate(Math.round(x), Math.round(y));
 
-function drawGas(x, y) {
-  cx.save(); cx.translate(x, y + Math.sin(Date.now() * .003) * 2.5);
-  cx.fillStyle = 'rgba(232,58,12,.1)';
-  cx.beginPath(); cx.arc(0, 0, 16, 0, Math.PI * 2); cx.fill();
-  cx.fillStyle = P.signal;
-  cx.beginPath(); cx.roundRect(-7, -9, 14, 18, 2); cx.fill();
-  cx.strokeStyle = '#fff'; cx.lineWidth = 1.8; cx.lineCap = 'round';
-  cx.beginPath(); cx.moveTo(-3, -9); cx.lineTo(-3, -13); cx.lineTo(3, -13); cx.lineTo(3, -9); cx.stroke();
-  cx.fillStyle = '#B0300A'; cx.fillRect(5, -13, 4, 4);
-  cx.fillStyle = '#fff'; cx.font = '700 9px "DM Mono"'; cx.textAlign = 'center';
-  cx.fillText('F', 0, 5);
-  cx.restore();
-}
+  // legs (animated)
+  cx.fillStyle = YG;
+  if (leg) {
+    cx.fillRect(-5, 8, 3, 4); cx.fillRect(3, 6, 3, 4);
+  } else {
+    cx.fillRect(-5, 6, 3, 4); cx.fillRect(3, 8, 3, 4);
+  }
+  // boots
+  cx.fillStyle = YO;
+  if (leg) {
+    cx.fillRect(-6, 11, 4, 2); cx.fillRect(2, 9, 4, 2);
+  } else {
+    cx.fillRect(-6, 9, 4, 2); cx.fillRect(2, 11, 4, 2);
+  }
 
-function drawWrench(x, y) {
-  cx.save(); cx.translate(x, y + Math.sin(Date.now() * .003 + 1) * 2.5);
-  cx.fillStyle = 'rgba(240,173,59,.12)';
-  cx.beginPath(); cx.arc(0, 0, 15, 0, Math.PI * 2); cx.fill();
-  cx.strokeStyle = P.amber; cx.lineWidth = 3; cx.lineCap = 'round';
-  cx.beginPath(); cx.moveTo(-7, 7); cx.lineTo(5, -5); cx.stroke();
-  cx.lineWidth = 2.2;
-  cx.beginPath(); cx.arc(6, -6, 5, -.8, 3.9); cx.stroke();
-  cx.beginPath(); cx.arc(-8, 8, 4, 2.2, 6.9); cx.stroke();
-  cx.restore();
-}
-
-// ── THE YOSHI ──
-
-function drawYoshi(x, y) {
-  cx.save(); cx.translate(x, y);
-
-  const bob = Math.sin(frame * 0.15) * 3;
-  const legPhase = Math.sin(frame * 0.3);
-
-  // shadow
-  cx.fillStyle = 'rgba(0,0,0,.1)';
-  cx.beginPath(); cx.ellipse(0, 38, 32, 10, 0, 0, Math.PI * 2); cx.fill();
-
-  // legs (animated stride)
-  cx.fillStyle = P.yG;
-  // left leg
-  cx.save(); cx.translate(-14, 22);
-  cx.rotate(legPhase * 0.3);
-  cx.beginPath(); cx.roundRect(-5, 0, 10, 18, 4); cx.fill();
-  // boot
-  cx.fillStyle = P.yO;
-  cx.beginPath(); cx.roundRect(-6, 14, 14, 7, 3); cx.fill();
-  cx.restore();
-  // right leg
-  cx.save(); cx.translate(14, 22);
-  cx.rotate(-legPhase * 0.3);
-  cx.fillStyle = P.yG;
-  cx.beginPath(); cx.roundRect(-5, 0, 10, 18, 4); cx.fill();
-  cx.fillStyle = P.yO;
-  cx.beginPath(); cx.roundRect(-6, 14, 14, 7, 3); cx.fill();
-  cx.restore();
-
-  // body
-  cx.translate(0, bob);
-
-  // shell (behind body)
-  cx.fillStyle = P.signal;
-  cx.beginPath(); cx.ellipse(0, -4, 22, 18, 0, 0, Math.PI * 2); cx.fill();
-  cx.fillStyle = '#C0300A';
-  cx.beginPath(); cx.ellipse(0, -6, 16, 12, 0, 0, Math.PI); cx.fill();
+  // shell
+  cx.fillStyle = YR;
+  cx.fillRect(-6, -3, 13, 9);
+  cx.fillStyle = '#B71C1C';
+  cx.fillRect(-5, -1, 11, 5);
 
   // belly
-  cx.fillStyle = P.yW;
-  cx.beginPath(); cx.ellipse(0, 6, 18, 22, 0, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = YW;
+  cx.fillRect(-4, 0, 9, 8);
 
-  // green body overlay
-  cx.fillStyle = P.yG;
-  cx.beginPath(); cx.ellipse(0, 0, 22, 26, 0, Math.PI * 0.15, Math.PI * 0.85, true); cx.fill();
-
-  // arms
-  cx.fillStyle = P.yG;
-  cx.save(); cx.translate(-22, -2); cx.rotate(-.3 + legPhase * 0.2);
-  cx.beginPath(); cx.roundRect(-4, -4, 8, 18, 3); cx.fill(); cx.restore();
-  cx.save(); cx.translate(22, -2); cx.rotate(.3 - legPhase * 0.2);
-  cx.beginPath(); cx.roundRect(-4, -4, 8, 18, 3); cx.fill(); cx.restore();
+  // body
+  cx.fillStyle = YG;
+  cx.fillRect(-6, -5, 13, 5);
+  cx.fillRect(-5, 0, 2, 8);
+  cx.fillRect(4, 0, 2, 8);
 
   // head
-  cx.fillStyle = P.yG;
-  cx.beginPath(); cx.ellipse(0, -30, 20, 18, 0, 0, Math.PI * 2); cx.fill();
-
-  // snout (big round nose, facing down toward van)
-  cx.fillStyle = P.yGl;
-  cx.beginPath(); cx.ellipse(0, -18, 14, 10, 0, 0, Math.PI * 2); cx.fill();
-
+  cx.fillStyle = YG;
+  cx.fillRect(-5, -11, 11, 7);
+  // snout
+  cx.fillStyle = YL;
+  cx.fillRect(-4, -7, 9, 4);
   // nostrils
-  cx.fillStyle = P.yGd;
-  cx.beginPath(); cx.arc(-4, -16, 2, 0, Math.PI * 2); cx.fill();
-  cx.beginPath(); cx.arc(4, -16, 2, 0, Math.PI * 2); cx.fill();
-
-  // eyes (looking down eagerly)
+  cx.fillStyle = YD;
+  cx.fillRect(-2, -5, 1, 1);
+  cx.fillRect(2, -5, 1, 1);
+  // eyes
   cx.fillStyle = '#fff';
-  cx.beginPath(); cx.ellipse(-8, -36, 7, 8, 0, 0, Math.PI * 2); cx.fill();
-  cx.beginPath(); cx.ellipse(8, -36, 7, 8, 0, 0, Math.PI * 2); cx.fill();
-  // pupils (looking down at the van)
+  cx.fillRect(-4, -11, 3, 3);
+  cx.fillRect(2, -11, 3, 3);
+  // pupils
   cx.fillStyle = '#111';
-  cx.beginPath(); cx.arc(-7, -33, 3.5, 0, Math.PI * 2); cx.fill();
-  cx.beginPath(); cx.arc(9, -33, 3.5, 0, Math.PI * 2); cx.fill();
-  // gleam
-  cx.fillStyle = '#fff';
-  cx.beginPath(); cx.arc(-8.5, -35, 1.5, 0, Math.PI * 2); cx.fill();
-  cx.beginPath(); cx.arc(7.5, -35, 1.5, 0, Math.PI * 2); cx.fill();
-
-  // head crest / ridge
-  cx.fillStyle = P.signal;
-  cx.beginPath();
-  cx.moveTo(-6, -46); cx.lineTo(0, -52); cx.lineTo(6, -46);
-  cx.closePath(); cx.fill();
+  cx.fillRect(-3, -10, 2, 2);
+  cx.fillRect(3, -10, 2, 2);
+  // crest
+  cx.fillStyle = YR;
+  cx.fillRect(-2, -13, 5, 2);
 
   cx.restore();
 }
 
-// ── particles ──
-
-function burst(x, y, color, n) {
-  for (let i = 0; i < n; i++)
-    parts.push({ x, y, vx: (Math.random() - .5) * 5, vy: (Math.random() - .5) * 5,
-      life: 20 + Math.random() * 20, color, r: 1.5 + Math.random() * 3 });
+// ── PARTICLES (pixel-scale) ──
+function burst(x,y,color,n) {
+  for(let i=0;i<n;i++) parts.push({x,y,vx:(Math.random()-.5)*3,vy:(Math.random()-.5)*3,
+    life:12+Math.random()*12,color,r:1});
 }
-
-function addDust(x, y) {
-  dust.push({ x: x + (Math.random() - .5) * 8, y, vx: (Math.random() - .5) * 1,
-    vy: Math.random() * .5, life: 20 + Math.random() * 12, ml: 32, r: 2 + Math.random() * 2.5 });
+function addDust(x,y) {
+  dust.push({x:x+(Math.random()-.5)*4,y,vx:(Math.random()-.5)*.5,
+    vy:Math.random()*.3,life:10+Math.random()*8,ml:18,r:1});
 }
 
 // ── UPDATE ──
 
 function update() {
-  if (mode !== 'play') return;
+  if (mode!=='play') return;
   frame++;
-  const w = W(), h = H();
 
-  // input
-  let si = 0, ai = 0;
-  if (keys['ArrowLeft'] || keys['KeyA'] || touchDir < 0) si = -1;
-  if (keys['ArrowRight'] || keys['KeyD'] || touchDir > 0) si = 1;
-  if (keys['ArrowUp'] || keys['KeyW']) ai = 1;    // boost = go faster downhill
-  if (keys['ArrowDown'] || keys['KeyS']) ai = -1;  // brake
+  let si=0, ai=0;
+  if (keys['ArrowLeft']||keys['KeyA']||touchDir<0) si=-1;
+  if (keys['ArrowRight']||keys['KeyD']||touchDir>0) si=1;
+  if (keys['ArrowUp']||keys['KeyW']) ai=1;
+  if (keys['ArrowDown']||keys['KeyS']) ai=-1;
 
-  // speed
-  spd = Math.min(spd + .0012, 7);
-  if (ai > 0) spd = Math.min(spd + .06, 9.5);
-  if (ai < 0) spd = Math.max(spd - .05, 1.5);
+  spd=Math.min(spd+.001,5);
+  if (ai>0) spd=Math.min(spd+.04,6.5);
+  if (ai<0) spd=Math.max(spd-.04,1);
 
-  // steer
-  van.vx += si * .7;
-  van.vx *= .86;
-  van.x += van.vx;
-  tilt = van.vx * .6;
-  van.x = Math.max(28, Math.min(w - 28, van.x));
+  van.vx+=si*.45;
+  van.vx*=.85;
+  van.x+=van.vx;
+  tilt=van.vx;
+  van.x=Math.max(10,Math.min(W-10,van.x));
 
   // jump
-  if (jumpCool > 0) jumpCool--;
-  if (jumpT > 0) jumpT--;
-  if ((keys['Space'] || keys['KeyJ']) && jumpT === 0 && jumpCool === 0) {
-    jumpT = 36;    // ~0.6s airborne
-    jumpCool = 50;  // cooldown before next jump
+  if(jumpCool>0)jumpCool--;
+  if(jumpT>0)jumpT--;
+  if((keys['Space']||keys['KeyJ'])&&jumpT===0&&jumpCool===0){jumpT=30;jumpCool=42;}
+  const jumpH=jumpT>0?Math.sin((jumpT/30)*Math.PI)*18:0;
+  const airborne=jumpT>0;
+
+  const scroll=spd*1;
+  dist+=spd*.22;
+  fuel-=.012+spd*.0015;
+  if(fuel<=0&&!yoshiActive){fuel=0;die('OUT OF FUEL');return;}
+  if(fuel<=0)fuel=0;
+
+  for(const o of obs)o.y-=scroll;
+  for(const p of pix)p.y-=scroll;
+  obs=obs.filter(o=>o.y>-20);
+  pix=pix.filter(p=>p.y>-10&&!p.dead);
+
+  const bot=obs.length?Math.max(...obs.map(o=>o.y)):0;
+  if(bot<H+30){spawnTerrain(H+10+Math.random()*60);if(Math.random()<.4)spawnTerrain(H+30+Math.random()*60);}
+
+  if(Math.random()<.009)spawnPickup();
+
+  // yoshi chase
+  if(dist>=YOSHI_WARN&&!yoshiWarned){yoshiWarned=true;wBan.classList.add('show');}
+  if(dist>=YOSHI_DIST&&!yoshiActive){
+    yoshiActive=true;wBan.textContent='🦖 YOSHI IS HERE 🦖';
+    yoshi={x:van.x,y:-20,spd:spd+.2};
+    fuel=Math.min(100,fuel+15);
   }
-  // jump height: parabolic arc, peaks at frame 18
-  const jumpH = jumpT > 0 ? Math.sin((jumpT / 36) * Math.PI) * 40 : 0;
-  const airborne = jumpT > 0;
-
-  // scroll = terrain moves UP as van goes downhill
-  const scroll = spd * 1.4;
-  dist += spd * .28;
-  fuel -= .013 + spd * .0018;
-
-  if (fuel <= 0 && !yoshiActive) { fuel = 0; die('OUT OF FUEL'); return; }
-  if (fuel <= 0) fuel = 0;
-
-  // scroll all objects UP
-  for (const o of obs) o.y -= scroll;
-  for (const p of pix) p.y -= scroll;
-
-  // cull objects that scrolled off the top
-  obs = obs.filter(o => o.y > -60);
-  pix = pix.filter(p => p.y > -30 && !p.dead);
-
-  // spawn new terrain at the bottom (sparser)
-  const bottomMost = obs.length ? Math.max(...obs.map(o => o.y)) : 0;
-  if (bottomMost < h + 60) {
-    spawnTerrain(h + 30 + Math.random() * 160);
-    if (Math.random() < .45) spawnTerrain(h + 80 + Math.random() * 160);
-  }
-
-  // pickups
-  if (Math.random() < .011) spawnPickup();
-
-  // ── YOSHI CHASE ──
-  if (dist >= YOSHI_WARN && !yoshiWarned) {
-    yoshiWarned = true;
-    wBan.classList.add('show');
-  }
-  if (dist >= YOSHI_DIST && !yoshiActive) {
-    yoshiActive = true;
-    wBan.textContent = '🦖 YOSHI IS HERE 🦖';
-    yoshi = { x: van.x, y: -80, spd: spd + 0.3 };
-    // give a little extra fuel for the chase
-    fuel = Math.min(100, fuel + 15);
-  }
-  if (yoshiActive && yoshi && !yoshiAte) {
-    // yoshi chases the van
-    const dx = van.x - yoshi.x;
-    yoshi.x += dx * 0.03;  // homes in on van's x
-    // yoshi speed: slightly faster than base, player can outrun with boost briefly
-    yoshi.spd = Math.max(yoshi.spd, spd * 0.85 + 1.8);
-    yoshi.y += (yoshi.spd - spd) * 1.2 + 0.6;  // net downward movement on screen
-
-    // ground pound dust
-    if (frame % 8 === 0) {
-      addDust(yoshi.x - 12, yoshi.y + 36);
-      addDust(yoshi.x + 12, yoshi.y + 36);
-    }
-
-    // catch the van (not if airborne)
-    if (!airborne && Math.abs(yoshi.x - van.x) < 30 && Math.abs(yoshi.y - van.y) < 40) {
-      yoshiAte = true;
-      shakeT = 25;
-      burst(van.x, van.y, P.yG, 25);
-      burst(van.x, van.y, P.signal, 15);
+  if(yoshiActive&&yoshi&&!yoshiAte){
+    yoshi.x+=(van.x-yoshi.x)*.025;
+    yoshi.spd=Math.max(yoshi.spd,spd*.85+1.2);
+    yoshi.y+=(yoshi.spd-spd)*.8+.4;
+    if(frame%6===0){addDust(yoshi.x-4,yoshi.y+10);addDust(yoshi.x+4,yoshi.y+10);}
+    if(!airborne&&Math.abs(yoshi.x-van.x)<10&&Math.abs(yoshi.y-van.y)<14){
+      yoshiAte=true;shakeT=15;burst(van.x,van.y,P.yG,15);burst(van.x,van.y,P.signal,10);
       die('EATEN BY YOSHI');
     }
   }
 
-  // ── collisions (skip if airborne) ──
-  if (inv > 0) inv--;
-  if (inv <= 0 && !airborne && !yoshiAte) {
-    for (const o of obs) {
-      if (o.hw === 0) continue; // skip bushes
-      const dx = Math.abs(van.x - o.x);
-      const dy = Math.abs(van.y - o.y);
-      if (dx < (van.w * .35 + o.hw) && dy < (van.h * .35 + o.hh)) {
-        die('CRASHED'); return;
+  // collisions
+  if(inv>0)inv--;
+  if(inv<=0&&!airborne&&!yoshiAte){
+    for(const o of obs){
+      if(o.hw===0)continue;
+      if(Math.abs(van.x-o.x)<(van.w*.35+o.hw)&&Math.abs(van.y-o.y)<(van.h*.35+o.hh)){
+        die('CRASHED');return;
       }
     }
   }
 
-  // pickups
-  for (const p of pix) {
-    if (p.dead) continue;
-    if (Math.abs(van.x - p.x) < 26 && Math.abs(van.y - p.y) < 26) {
-      p.dead = true;
-      if (p.t === 'gas') fuel = Math.min(100, fuel + 30);
-      else inv = 150;
-      burst(p.x, p.y, p.t === 'gas' ? P.signal : P.amber, 10);
+  for(const p of pix){
+    if(p.dead)continue;
+    if(Math.abs(van.x-p.x)<8&&Math.abs(van.y-p.y)<8){
+      p.dead=true;
+      if(p.t==='gas')fuel=Math.min(100,fuel+30);else inv=100;
+      burst(p.x,p.y,p.t==='gas'?P.signal:P.amber,6);
     }
   }
 
-  // dust behind van (going upward since van descends)
-  if (spd > 3 && Math.random() < .35) {
-    addDust(van.x - 14, van.y - 30);
-    addDust(van.x + 14, van.y - 30);
-  }
+  if(spd>2.5&&Math.random()<.3){addDust(van.x-5,van.y-8);addDust(van.x+5,van.y-8);}
 
-  // particles
-  parts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .08; p.life--; });
-  parts = parts.filter(p => p.life > 0);
-  dust.forEach(d => { d.x += d.vx; d.y += d.vy; d.life--; });
-  dust = dust.filter(d => d.life > 0);
-  if (shakeT > 0) shakeT--;
+  parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.06;p.life--;});
+  parts=parts.filter(p=>p.life>0);
+  dust.forEach(d=>{d.x+=d.vx;d.y+=d.vy;d.life--;});
+  dust=dust.filter(d=>d.life>0);
+  if(shakeT>0)shakeT--;
 
-  // HUD
-  hD.textContent = Math.floor(dist);
-  hS.textContent = ['·','··','···','····','·····'][Math.min(4, Math.floor((spd - 1.5) / 1.6))];
-  hF.textContent = Math.max(0, Math.floor(fuel));
-  hFw.classList.toggle('warn', fuel < 20);
+  hD.textContent=Math.floor(dist);
+  hF.textContent=Math.max(0,Math.floor(fuel));
+  hFw.classList.toggle('warn',fuel<20);
 }
 
 function die(reason) {
-  mode = 'dead'; shakeT = Math.max(shakeT, 18); deathTime = Date.now();
-  activeTouches = {}; touchDir = 0; keys['ArrowUp'] = false;
-  if (typeof touchZones !== 'undefined') touchZones.classList.remove('playing');
-  if (!yoshiAte) { burst(van.x, van.y, P.signal, 20); burst(van.x, van.y, P.amber, 12); }
-  if (Math.floor(dist) > best) best = Math.floor(dist);
-  hB.textContent = best;
-  setTimeout(() => {
-    if (yoshiAte) {
-      eMsg.textContent = 'nom nom nom';
-      eMsg.style.display = '';
-    } else {
-      eMsg.style.display = 'none';
-    }
-    eRsn.textContent = reason;
-    eSc.innerHTML = Math.floor(dist) + ' <small>m</small>';
-    eBst.textContent = 'BEST ' + best + ' m';
+  mode='dead';shakeT=Math.max(shakeT,12);deathTime=Date.now();
+  activeTouches={};touchDir=0;keys['ArrowUp']=false;keys['Space']=false;
+  touchZones.classList.remove('playing');
+  if(!yoshiAte){burst(van.x,van.y,P.signal,12);burst(van.x,van.y,P.amber,8);}
+  if(Math.floor(dist)>best)best=Math.floor(dist);
+  hB.textContent=best;
+  setTimeout(()=>{
+    eMsg.textContent=yoshiAte?'nom nom nom':'';
+    eMsg.style.display=yoshiAte?'':'none';
+    eRsn.textContent=reason;
+    eSc.innerHTML=Math.floor(dist)+' <small>m</small>';
+    eBst.textContent='BEST '+best+' m';
     endOv.classList.remove('hidden');
     wBan.classList.remove('show');
-  }, yoshiAte ? 1000 : 700);
+  },yoshiAte?800:500);
 }
 
 // ── DRAW ──
 
 function draw() {
-  const w = W(), h = H();
   cx.save();
-  if (shakeT > 0) cx.translate((Math.random() - .5) * shakeT * .7, (Math.random() - .5) * shakeT * .7);
+  if(shakeT>0)cx.translate(Math.round((Math.random()-.5)*shakeT*.5),Math.round((Math.random()-.5)*shakeT*.5));
 
-  // ── terrain background — flat green ──
-  cx.fillStyle = P.grass;
-  cx.fillRect(0, 0, w, h);
+  // flat green field
+  cx.fillStyle=P.bg;
+  cx.fillRect(0,0,W,H);
 
-  // sparse pixel grass tufts — tiny, spindly, barely visible
-  cx.fillStyle = P.grassTuft;
-  const scrollY = dist * 12;
-  // use a seeded-ish pattern so tufts are consistent while scrolling
-  for (let gy = -20; gy < h + 20; gy += 80) {
-    for (let gx = 30; gx < w; gx += 110) {
-      // offset every other row
-      const ox = ((gy / 80) % 2) * 55;
-      const px = gx + ox + ((gx * 7 + gy * 13) % 40) - 20;
-      const py = gy + (scrollY % 80) + ((gx * 3 + gy * 11) % 30) - 15;
-      // single pixel tuft — 1-3 tiny lines
-      cx.fillRect(px, py, 1, 3);
-      if ((gx * gy) % 3 === 0) cx.fillRect(px + 2, py + 1, 1, 2);
-      if ((gx * gy) % 7 === 0) cx.fillRect(px - 1, py + 1, 1, 2);
+  // sparse pixel grass tufts
+  cx.fillStyle=P.tuft;
+  const sy=dist*8;
+  for(let gy=-10;gy<H+10;gy+=24){
+    for(let gx=8;gx<W;gx+=32){
+      const ox=((gy/24|0)%2)*16;
+      const px=gx+ox+((gx*7+gy*13)%18)-9;
+      const py=gy+(sy%24)+((gx*3+gy*11)%14)-7;
+      if(py>-2&&py<H+2){
+        cx.fillRect(px,py,1,2);
+        if((gx+gy)%3===0)cx.fillRect(px+1,py+1,1,1);
+      }
     }
   }
 
-  // dust particles
-  for (const d of dust) {
-    cx.globalAlpha = (d.life / d.ml) * .22;
-    cx.fillStyle = P.grassTuft;
-    cx.beginPath(); cx.arc(d.x, d.y, d.r, 0, Math.PI * 2); cx.fill();
+  // dust
+  for(const d of dust){
+    cx.globalAlpha=(d.life/d.ml)*.4;
+    cx.fillStyle=P.tuft;
+    cx.fillRect(Math.round(d.x),Math.round(d.y),d.r,d.r);
   }
-  cx.globalAlpha = 1;
+  cx.globalAlpha=1;
 
-  // ── depth-sort all objects + van + yoshi ──
-  const all = [
-    ...obs.map(o => ({ ...o, cat: 'ob' })),
-    ...pix.filter(p => !p.dead).map(p => ({ ...p, cat: 'px' })),
+  // depth sort
+  const all=[
+    ...obs.map(o=>({...o,cat:'ob'})),
+    ...pix.filter(p=>!p.dead).map(p=>({...p,cat:'px'})),
   ];
-  // van
-  if (!yoshiAte) all.push({ x: van.x, y: van.y, cat: 'van' });
-  // yoshi
-  if (yoshiActive && yoshi) all.push({ x: yoshi.x, y: yoshi.y, cat: 'yoshi' });
+  if(!yoshiAte)all.push({x:van.x,y:van.y,cat:'van'});
+  if(yoshiActive&&yoshi)all.push({x:yoshi.x,y:yoshi.y,cat:'yoshi'});
+  all.sort((a,b)=>a.y-b.y);
 
-  all.sort((a, b) => a.y - b.y);
+  const jh = jumpT>0?Math.sin((jumpT/30)*Math.PI)*18:0;
 
-  for (const o of all) {
-    if (o.y < -80 || o.y > h + 80) continue;
-    switch (o.cat) {
+  for(const o of all){
+    if(o.y<-20||o.y>H+20)continue;
+    switch(o.cat){
       case 'ob':
-        if (o.t === 'tree') drawTree(o.x, o.y, o.s);
-        else if (o.t === 'rock') drawRock(o.x, o.y, o.s);
-        else drawBush(o.x, o.y, o.s);
+        if(o.t==='tree')drawPixTree(o.x,o.y);
+        else if(o.t==='rock')drawPixRock(o.x,o.y);
+        else drawPixBush(o.x,o.y);
         break;
       case 'px':
-        if (o.t === 'gas') drawGas(o.x, o.y);
-        else drawWrench(o.x, o.y);
+        if(o.t==='gas')drawPixGas(o.x,o.y);
+        else drawPixWrench(o.x,o.y);
         break;
       case 'van':
-        if (inv > 0 && Math.floor(inv / 5) % 2) cx.globalAlpha = .4;
-        if (jumpH > 0) {
-          // ground shadow (stays at ground level, shrinks with height)
-          const shadowScale = 1 - jumpH / 60;
-          cx.fillStyle = 'rgba(0,0,0,.1)';
-          cx.beginPath();
-          cx.ellipse(van.x, van.y + 28, 20 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2);
-          cx.fill();
-          drawVan(van.x, van.y - jumpH, tilt);
+        if(inv>0&&Math.floor(inv/4)%2)cx.globalAlpha=.35;
+        if(jh>0){
+          // ground shadow
+          cx.fillStyle='rgba(0,0,0,.15)';
+          const ss=1-jh/25;
+          cx.fillRect(Math.round(van.x)-Math.round(5*ss),Math.round(van.y)+8,Math.round(10*ss),Math.round(3*ss));
+          drawPixVan(van.x, van.y-jh);
         } else {
-          drawVan(van.x, van.y, tilt);
+          drawPixVan(van.x, van.y);
         }
-        cx.globalAlpha = 1;
+        cx.globalAlpha=1;
         break;
       case 'yoshi':
-        drawYoshi(o.x, o.y);
+        drawPixYoshi(o.x,o.y);
         break;
     }
   }
 
   // particles
-  for (const p of parts) {
-    cx.globalAlpha = Math.min(1, p.life / 20);
-    cx.fillStyle = p.color;
-    cx.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r);
+  for(const p of parts){
+    cx.globalAlpha=Math.min(1,p.life/12);
+    cx.fillStyle=p.color;
+    cx.fillRect(Math.round(p.x),Math.round(p.y),p.r,p.r);
   }
-  cx.globalAlpha = 1;
+  cx.globalAlpha=1;
 
   // low fuel
-  if (fuel < 20 && fuel > 0 && mode === 'play' && !yoshiActive) {
-    cx.globalAlpha = .25 + Math.sin(Date.now() * .008) * .15;
-    cx.fillStyle = P.signal;
-    cx.font = '500 12px "DM Mono"'; cx.textAlign = 'center';
-    cx.fillText('▼  LOW FUEL  ▼', w / 2, h - 24);
-    cx.globalAlpha = 1;
+  if(fuel<20&&fuel>0&&mode==='play'&&!yoshiActive){
+    if(Math.floor(frame/15)%2===0){
+      cx.fillStyle=P.signal;
+      cx.font='5px monospace';cx.textAlign='center';
+      cx.fillText('LOW FUEL',W/2,H-6);
+    }
   }
 
   cx.restore();
 }
 
-// ── input ──
+// ── INPUT ──
 
-const isMobile = matchMedia('(hover:none) and (pointer:coarse)').matches;
-const touchZones = document.getElementById('touchZones');
-const tzL = document.getElementById('tzL');
-const tzM = document.getElementById('tzM');
-const tzR = document.getElementById('tzR');
-
-// detect mobile → swap instructions
-if (isMobile) {
-  document.getElementById('startPrompt').textContent = 'tap to start';
-  document.getElementById('ctrlHint').innerHTML = 'left · right · center = jump';
+const isMobile=matchMedia('(hover:none)and(pointer:coarse)').matches;
+if(isMobile){
+  document.getElementById('startPrompt').textContent='tap to start';
+  document.getElementById('ctrlHint').innerHTML='left · right · center = jump';
 }
 
-function goFullscreen() {
-  const el = document.getElementById('gw');
-  if (el.requestFullscreen) el.requestFullscreen().catch(()=>{});
-  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-  // re-measure after entering fullscreen
-  setTimeout(resize, 200);
-  setTimeout(resize, 600);
+function goFullscreen(){
+  const el=document.getElementById('gw');
+  if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
+  else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
 }
 
-function tryStart() {
-  if (mode === 'dead' && Date.now() - deathTime < 800) return;
-  if (isMobile) goFullscreen();
-  init(); resize(); mode = 'play';
-  titOv.classList.add('hidden');
-  endOv.classList.add('hidden');
+function tryStart(){
+  if(mode==='dead'&&Date.now()-deathTime<600)return;
+  if(isMobile)goFullscreen();
+  init();mode='play';
+  titOv.classList.add('hidden');endOv.classList.add('hidden');
   touchZones.classList.add('playing');
 }
 
-document.addEventListener('keydown', e => {
-  keys[e.code] = true;
-  if (mode !== 'play') tryStart();
-});
-document.addEventListener('keyup', e => keys[e.code] = false);
+document.addEventListener('keydown',e=>{keys[e.code]=true;if(mode!=='play')tryStart();});
+document.addEventListener('keyup',e=>{keys[e.code]=false;});
 
-// ── zone-based touch controls ──
-// Left third = steer left, right third = steer right, center = boost
-let activeTouches = {};
-
-function classifyTouch(clientX) {
-  const w = cv.getBoundingClientRect().width;
-  const rel = clientX / w;
-  if (rel < 0.33) return 'left';
-  if (rel > 0.67) return 'right';
-  return 'boost';
+function classifyTouch(cx2){
+  const w=cv.getBoundingClientRect().width;
+  const r=cx2/w;
+  if(r<.33)return'left';if(r>.67)return'right';return'boost';
 }
-
-function updateTouchState() {
-  touchDir = 0;
-  let jumping = false;
-  for (const id in activeTouches) {
-    const zone = activeTouches[id];
-    if (zone === 'left') touchDir = -1;
-    if (zone === 'right') touchDir = 1;
-    if (zone === 'boost') jumping = true;
+function updateTouchState(){
+  touchDir=0;let jumping=false;
+  for(const id in activeTouches){
+    const z=activeTouches[id];
+    if(z==='left')touchDir=-1;if(z==='right')touchDir=1;if(z==='boost')jumping=true;
   }
-  keys['Space'] = jumping;  // center zone = jump
-
-  // visual feedback
-  tzL.classList.toggle('active', !!Object.values(activeTouches).find(z => z === 'left'));
-  tzR.classList.toggle('active', !!Object.values(activeTouches).find(z => z === 'right'));
-  tzM.classList.toggle('active', jumping);
+  keys['Space']=jumping;
+  tzL.classList.toggle('active',!!Object.values(activeTouches).find(z=>z==='left'));
+  tzR.classList.toggle('active',!!Object.values(activeTouches).find(z=>z==='right'));
+  tzM.classList.toggle('active',jumping);
 }
+cv.addEventListener('touchstart',e=>{e.preventDefault();if(mode!=='play'){tryStart();return;}
+  for(const t of e.changedTouches)activeTouches[t.identifier]=classifyTouch(t.clientX);updateTouchState();},{passive:false});
+cv.addEventListener('touchmove',e=>{e.preventDefault();
+  for(const t of e.changedTouches)activeTouches[t.identifier]=classifyTouch(t.clientX);updateTouchState();},{passive:false});
+cv.addEventListener('touchend',e=>{e.preventDefault();
+  for(const t of e.changedTouches)delete activeTouches[t.identifier];updateTouchState();},{passive:false});
+cv.addEventListener('touchcancel',e=>{for(const t of e.changedTouches)delete activeTouches[t.identifier];updateTouchState();});
+document.querySelectorAll('.ov').forEach(el=>{el.addEventListener('touchstart',e=>{e.preventDefault();if(mode!=='play')tryStart();},{passive:false});});
+document.addEventListener('fullscreenchange',()=>{});
 
-cv.addEventListener('touchstart', e => {
-  e.preventDefault();
-  if (mode !== 'play') { tryStart(); return; }
-  for (const t of e.changedTouches) {
-    activeTouches[t.identifier] = classifyTouch(t.clientX);
-  }
-  updateTouchState();
-}, { passive: false });
-
-cv.addEventListener('touchmove', e => {
-  e.preventDefault();
-  for (const t of e.changedTouches) {
-    activeTouches[t.identifier] = classifyTouch(t.clientX);
-  }
-  updateTouchState();
-}, { passive: false });
-
-cv.addEventListener('touchend', e => {
-  e.preventDefault();
-  for (const t of e.changedTouches) {
-    delete activeTouches[t.identifier];
-  }
-  updateTouchState();
-}, { passive: false });
-
-cv.addEventListener('touchcancel', e => {
-  for (const t of e.changedTouches) {
-    delete activeTouches[t.identifier];
-  }
-  updateTouchState();
-});
-
-// also handle touches on the overlays
-document.querySelectorAll('.ov').forEach(el => {
-  el.addEventListener('touchstart', e => {
-    e.preventDefault();
-    if (mode !== 'play') tryStart();
-  }, { passive: false });
-});
-
-// fullscreen exit → resize
-document.addEventListener('fullscreenchange', () => setTimeout(resize, 100));
-document.addEventListener('webkitfullscreenchange', () => setTimeout(resize, 100));
-
-// ── loop ──
+// ── LOOP ──
 init();
-(function loop() { update(); draw(); requestAnimationFrame(loop); })();
+(function loop(){update();draw();requestAnimationFrame(loop);})();
 </script>
 </body>
 </html>
