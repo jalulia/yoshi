@@ -2721,8 +2721,8 @@ window.DossierApp = (function() {
     if (!id || id === 'sec-08') return;
     const head = sec.querySelector('.section-head');
     if (!head) return;
-    // Skip if already wired
-    if (head.querySelector('.section-edit-btn')) return;
+    // Strip any baked-in or dead buttons before adding fresh ones
+    head.querySelectorAll('.section-edit-btn').forEach(btn => btn.remove());
 
     const editBtn = document.createElement('button');
     editBtn.className = 'section-edit-btn';
@@ -2819,11 +2819,18 @@ window.DossierApp = (function() {
     _activeSection = null;
     editBtn.textContent = '…';
     cancelBtn.style.display = 'none';
+
+    // Build clean HTML for Supabase (strip edit buttons so they don't get baked in)
+    const temp = document.createElement('div');
+    temp.innerHTML = sec.innerHTML;
+    temp.querySelectorAll('.section-edit-btn').forEach(btn => btn.remove());
+    const cleanHtml = temp.innerHTML;
+
     try {
       const res = await fetch(URL+'/rest/v1/section_content', {
         method: 'POST',
         headers: Object.assign({}, headers, {'Prefer':'resolution=merge-duplicates,return=minimal'}),
-        body: JSON.stringify({id:id, html:sec.innerHTML, updated_at:new Date().toISOString()})
+        body: JSON.stringify({id:id, html:cleanHtml, updated_at:new Date().toISOString()})
       });
       if (!res.ok) throw new Error(res.status);
       editBtn.textContent = 'saved';
@@ -2860,10 +2867,30 @@ window.DossierApp = (function() {
       rows.forEach(row => {
         const sec = document.getElementById(row.id);
         if (sec && row.id !== 'sec-08') {
-          sec.innerHTML = row.html;
+          // Strip any baked-in edit buttons from saved HTML before injecting
+          const temp = document.createElement('div');
+          temp.innerHTML = row.html;
+          temp.querySelectorAll('.section-edit-btn').forEach(btn => btn.remove());
+          // Also strip any leftover SVG edit hints
+          temp.querySelectorAll('.svg-edit-hint').forEach(el => el.remove());
+          sec.innerHTML = temp.innerHTML;
           wireSection(sec);
         }
       });
+
+      // Reconcile section tags from dossier_sections (source of truth)
+      const tagRes = await fetch(URL+'/rest/v1/dossier_sections?select=id,title,subtitle', {headers:{'apikey':KEY}});
+      if (tagRes.ok) {
+        const sections = await tagRes.json();
+        sections.forEach(row => {
+          const sec = document.getElementById(row.id);
+          if (!sec) return;
+          const tagEl = sec.querySelector('.section-tag');
+          if (tagEl && tagEl.textContent !== row.subtitle) {
+            tagEl.textContent = row.subtitle;
+          }
+        });
+      }
     } catch(e) { /* silent fail — static content still shows */ }
   }
 
