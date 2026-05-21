@@ -1,5 +1,7 @@
-# Yoshi Dossier — v7.1 Build Reference
+# Yoshi Dossier — Build Reference
 
+
+#v7.1
 **Document:** `index.html` (~4820 lines, single self-contained file)
 **Hosted:** https://jalulia.github.io/yoshi
 **Repo:** github.com/jalulia/yoshi (GitHub Pages, `main` branch)
