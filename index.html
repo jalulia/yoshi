@@ -953,6 +953,129 @@
   }
   .fmt-link-input button:hover { background: rgba(255,255,255,0.25); }
 
+  /* ── TOC management (Phase 3) ── */
+  .toc { position: relative; }
+  .toc-manage-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    padding: 3px 6px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .toc-manage-btn:hover { color: var(--ink-mid); border-color: var(--rule); }
+  .toc-manage-btn.active { color: var(--done); border-color: var(--done); }
+
+  .toc-list.managing li {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    gap: 8px;
+    align-items: start;
+    padding: 10px 8px;
+    border: 1px dashed transparent;
+    border-radius: 3px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .toc-list.managing li:hover {
+    border-color: var(--rule);
+    background: var(--signal-soft);
+  }
+  .toc-list.managing li a {
+    display: contents;
+    pointer-events: none;
+  }
+  .toc-list.managing .toc-edit-field {
+    pointer-events: auto;
+  }
+  .toc-list.managing .toc-page { display: none; }
+  .toc-list.managing .toc-name {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .toc-edit-field {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 0.5px solid var(--rule);
+    border-radius: 2px;
+    padding: 3px 8px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .toc-edit-field:focus { border-color: var(--signal); }
+  .toc-edit-field.sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--ink-mid);
+  }
+
+  .toc-row-controls {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .toc-row-ctrl {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: none;
+    border: 0.5px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    color: var(--ink-faint);
+    font-size: 11px;
+    transition: color 0.12s, border-color 0.12s, background 0.12s;
+  }
+  .toc-row-ctrl:hover { color: var(--ink); border-color: var(--ink-mid); background: var(--signal-soft); }
+  .toc-row-ctrl.delete:hover { color: var(--signal); border-color: var(--signal); }
+
+  .toc-add-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: none;
+    border: 1px dashed var(--rule);
+    border-radius: 3px;
+    cursor: pointer;
+    width: 100%;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .toc-add-section:hover { color: var(--signal); border-color: var(--signal); }
+  .toc-save-status {
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--done);
+    opacity: 0;
+    transition: opacity 0.3s;
+    margin-left: 8px;
+  }
+  .toc-save-status.show { opacity: 1; }
+
   /* ── Quick-jump menu (Phase 1) ── */
   .qj-toggle {
     position: fixed;
@@ -2567,6 +2690,343 @@ window.DossierApp = (function() {
 
 <script>
 /* ─────────────────────────────────────────────
+   TOC Manager (Phase 3)
+   Edit titles/subtitles · Reorder · Add/Delete
+   Cascades to section heads, running heads, Supabase.
+   ───────────────────────────────────────────── */
+(function() {
+  const sb = DossierApp.sb;
+  const toc = document.querySelector('.toc');
+  const tocList = document.querySelector('.toc-list');
+  if (!toc || !tocList) return;
+
+  let _managing = false;
+  let _addBtn = null;
+  let _statusEl = null;
+
+  /* ── Manage button ── */
+  const manageBtn = document.createElement('button');
+  manageBtn.className = 'toc-manage-btn';
+  manageBtn.textContent = 'manage';
+  toc.appendChild(manageBtn);
+
+  _statusEl = document.createElement('span');
+  _statusEl.className = 'toc-save-status';
+  _statusEl.textContent = 'saved';
+  manageBtn.after(_statusEl);
+
+  manageBtn.addEventListener('click', () => {
+    _managing ? exitManageMode() : enterManageMode();
+  });
+
+  /* ── Helpers ── */
+  function getSectionPages() {
+    return Array.from(document.querySelectorAll('.page')).filter(page => {
+      const sec = page.querySelector('section.section');
+      return sec && sec.id && sec.id.startsWith('sec-');
+    });
+  }
+  function fmtNum(i) { return '§ ' + String(i + 1).padStart(2, '0'); }
+
+  /* ── Enter manage mode ── */
+  function enterManageMode() {
+    _managing = true;
+    manageBtn.textContent = 'done';
+    manageBtn.classList.add('active');
+    tocList.classList.add('managing');
+
+    Array.from(tocList.children).forEach((li) => {
+      const nameEl = li.querySelector('.toc-name');
+      if (!nameEl) return;
+      const subSpan = nameEl.querySelector('span');
+      const title = nameEl.childNodes[0].textContent.trim();
+      const subtitle = subSpan ? subSpan.textContent.trim() : '';
+
+      nameEl.innerHTML = '';
+      const titleInput = document.createElement('input');
+      titleInput.className = 'toc-edit-field';
+      titleInput.value = title;
+      titleInput.placeholder = 'Section title';
+      titleInput.dataset.field = 'title';
+      nameEl.appendChild(titleInput);
+
+      const subInput = document.createElement('input');
+      subInput.className = 'toc-edit-field sub';
+      subInput.value = subtitle;
+      subInput.placeholder = 'Subtitle · separate with ·';
+      subInput.dataset.field = 'subtitle';
+      nameEl.appendChild(subInput);
+
+      let controls = li.querySelector('.toc-row-controls');
+      if (!controls) {
+        controls = document.createElement('div');
+        controls.className = 'toc-row-controls';
+        controls.innerHTML =
+          '<button class="toc-row-ctrl move-up" title="Move up">↑</button>' +
+          '<button class="toc-row-ctrl move-down" title="Move down">↓</button>' +
+          '<button class="toc-row-ctrl delete" title="Delete section">✕</button>';
+        li.appendChild(controls);
+      }
+    });
+
+    if (!_addBtn) {
+      _addBtn = document.createElement('button');
+      _addBtn.className = 'toc-add-section';
+      _addBtn.textContent = '+ Add section';
+      _addBtn.addEventListener('click', addSection);
+      tocList.after(_addBtn);
+    }
+    _addBtn.style.display = '';
+    tocList.addEventListener('click', handleRowControl);
+  }
+
+  /* ── Exit manage mode — save + cascade ── */
+  function exitManageMode() {
+    _managing = false;
+    manageBtn.textContent = 'manage';
+    manageBtn.classList.remove('active');
+
+    const items = Array.from(tocList.children).map((li, i) => {
+      const titleInput = li.querySelector('.toc-edit-field[data-field="title"]');
+      const subInput = li.querySelector('.toc-edit-field[data-field="subtitle"]');
+      const link = li.querySelector('a');
+      const secId = link ? link.getAttribute('href').replace('#', '') : null;
+      return {
+        secId: secId,
+        sortOrder: i + 1,
+        title: titleInput ? titleInput.value.trim() : '',
+        subtitle: subInput ? subInput.value.trim() : ''
+      };
+    });
+
+    tocList.classList.remove('managing');
+    items.forEach((item, i) => {
+      const li = tocList.children[i];
+      if (!li) return;
+      const controls = li.querySelector('.toc-row-controls');
+      if (controls) controls.remove();
+      const nameEl = li.querySelector('.toc-name');
+      if (nameEl) nameEl.innerHTML = item.title + '<span>' + item.subtitle + '</span>';
+      const numEl = li.querySelector('.toc-num');
+      if (numEl) numEl.textContent = fmtNum(i);
+      const link = li.querySelector('a');
+      if (link) link.setAttribute('href', '#' + item.secId);
+    });
+
+    if (_addBtn) _addBtn.style.display = 'none';
+    tocList.removeEventListener('click', handleRowControl);
+
+    cascadeToSections(items);
+    saveToSupabase(items);
+    refreshQuickJump();
+    flashStatus();
+  }
+
+  /* ── Cascade to sections + running heads ── */
+  function cascadeToSections(items) {
+    items.forEach((item, i) => {
+      const sec = document.getElementById(item.secId);
+      if (!sec) return;
+      const displayNum = fmtNum(i);
+      const numEl = sec.querySelector('.section-num');
+      const nameEl = sec.querySelector('.section-name');
+      const tagEl = sec.querySelector('.section-tag');
+      if (numEl) numEl.textContent = displayNum;
+      if (nameEl) nameEl.textContent = item.title;
+      if (tagEl) tagEl.textContent = item.subtitle;
+      const page = sec.closest('.page');
+      if (page) {
+        const rhCenter = page.querySelector('.running-head .center');
+        if (rhCenter) rhCenter.innerHTML = displayNum + ' &middot; ' + item.title;
+      }
+    });
+  }
+
+  /* ── Save to Supabase ── */
+  async function saveToSupabase(items) {
+    for (const item of items) {
+      try {
+        await sb('dossier_sections?id=eq.' + item.secId, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            sort_order: item.sortOrder,
+            title: item.title,
+            subtitle: item.subtitle,
+            updated_at: new Date().toISOString()
+          })
+        });
+      } catch(e) { /* non-blocking */ }
+    }
+  }
+
+  /* ── Refresh quick-jump menu ── */
+  function refreshQuickJump() {
+    const qjList = document.querySelector('.qj-list');
+    if (!qjList) return;
+    qjList.innerHTML = '';
+    document.querySelectorAll('section.section').forEach(sec => {
+      const numEl = sec.querySelector('.section-num');
+      const nameEl = sec.querySelector('.section-name');
+      const tagEl = sec.querySelector('.section-tag');
+      if (!numEl || !nameEl) return;
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + sec.id;
+      a.innerHTML =
+        '<span class="qj-num">' + numEl.textContent + '</span>' +
+        '<span class="qj-title">' + nameEl.textContent +
+        (tagEl ? '<span class="qj-sub">' + tagEl.textContent + '</span>' : '') +
+        '</span>';
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        var p = document.querySelector('.qj-panel');
+        var o = document.querySelector('.qj-overlay');
+        var t = document.querySelector('.qj-toggle');
+        if (p) p.classList.remove('open');
+        if (o) o.classList.remove('open');
+        if (t) t.setAttribute('aria-expanded','false');
+        sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      li.appendChild(a);
+      qjList.appendChild(li);
+    });
+  }
+
+  /* ── Row controls (move/delete) ── */
+  function handleRowControl(e) {
+    const btn = e.target.closest('.toc-row-ctrl');
+    if (!btn) return;
+    const li = btn.closest('li');
+    if (!li) return;
+
+    if (btn.classList.contains('move-up') && li.previousElementSibling) {
+      tocList.insertBefore(li, li.previousElementSibling);
+      swapPages(li, 'up');
+    } else if (btn.classList.contains('move-down') && li.nextElementSibling) {
+      tocList.insertBefore(li.nextElementSibling, li);
+      swapPages(li, 'down');
+    } else if (btn.classList.contains('delete')) {
+      const titleInput = li.querySelector('.toc-edit-field[data-field="title"]');
+      const name = titleInput ? titleInput.value : 'this section';
+      if (!confirm('Delete "' + name + '"? This removes the section and its content.')) return;
+      const link = li.querySelector('a');
+      const secId = link ? link.getAttribute('href').replace('#', '') : null;
+      if (secId) {
+        const sec = document.getElementById(secId);
+        if (sec) { const page = sec.closest('.page'); if (page) page.remove(); }
+        sb('dossier_sections?id=eq.' + secId, { method: 'DELETE' });
+        sb('section_content?id=eq.' + secId, { method: 'DELETE' });
+      }
+      li.remove();
+    }
+    Array.from(tocList.children).forEach((row, i) => {
+      const numEl = row.querySelector('.toc-num');
+      if (numEl) numEl.textContent = fmtNum(i);
+    });
+  }
+
+  /* ── Swap page divs ── */
+  function swapPages(li, direction) {
+    const link = li.querySelector('a');
+    if (!link) return;
+    const secId = link.getAttribute('href').replace('#', '');
+    const sec = document.getElementById(secId);
+    if (!sec) return;
+    const page = sec.closest('.page');
+    if (!page) return;
+    if (direction === 'up' && page.previousElementSibling && page.previousElementSibling.querySelector('section.section')) {
+      page.parentNode.insertBefore(page, page.previousElementSibling);
+    } else if (direction === 'down' && page.nextElementSibling && page.nextElementSibling.querySelector('section.section')) {
+      page.parentNode.insertBefore(page.nextElementSibling, page);
+    }
+  }
+
+  /* ── Add new section ── */
+  function addSection() {
+    const count = tocList.children.length + 1;
+    const num = String(count).padStart(2, '0');
+    const secId = 'sec-new-' + Date.now().toString(36);
+    const displayNum = '§ ' + num;
+
+    const pageHtml =
+      '<div class="page">' +
+        '<div class="running-head">' +
+          '<div>Yoshi Dossier</div>' +
+          '<div class="center">' + displayNum + ' &middot; New Section</div>' +
+          '<div class="right">' + num + '</div>' +
+        '</div>' +
+        '<section class="section" id="' + secId + '">' +
+          '<div class="section-head">' +
+            '<div class="section-num">' + displayNum + '</div>' +
+            '<div class="section-name">New Section</div>' +
+            '<div class="section-tag">Subtitle</div>' +
+          '</div>' +
+          '<div class="prose"><p class="lead">Section content goes here.</p></div>' +
+        '</section>' +
+      '</div>';
+
+    const lastPage = getSectionPages().pop();
+    if (lastPage && lastPage.nextSibling) {
+      const temp = document.createElement('div');
+      temp.innerHTML = pageHtml;
+      lastPage.parentNode.insertBefore(temp.firstChild, lastPage.nextSibling);
+    }
+
+    // Add TOC row (in manage mode with inputs)
+    const li = document.createElement('li');
+    li.innerHTML =
+      '<a href="#' + secId + '">' +
+        '<span class="toc-num">' + displayNum + '</span>' +
+        '<span class="toc-name"></span>' +
+        '<span class="toc-page">' + num + '</span>' +
+      '</a>';
+    tocList.appendChild(li);
+
+    const nameEl = li.querySelector('.toc-name');
+    const titleInput = document.createElement('input');
+    titleInput.className = 'toc-edit-field';
+    titleInput.value = 'New Section';
+    titleInput.placeholder = 'Section title';
+    titleInput.dataset.field = 'title';
+    nameEl.appendChild(titleInput);
+    const subInput = document.createElement('input');
+    subInput.className = 'toc-edit-field sub';
+    subInput.value = 'Subtitle';
+    subInput.placeholder = 'Subtitle · separate with ·';
+    subInput.dataset.field = 'subtitle';
+    nameEl.appendChild(subInput);
+    const controls = document.createElement('div');
+    controls.className = 'toc-row-controls';
+    controls.innerHTML =
+      '<button class="toc-row-ctrl move-up" title="Move up">↑</button>' +
+      '<button class="toc-row-ctrl move-down" title="Move down">↓</button>' +
+      '<button class="toc-row-ctrl delete" title="Delete section">✕</button>';
+    li.appendChild(controls);
+    titleInput.focus();
+    titleInput.select();
+
+    // Insert to Supabase
+    sb('dossier_sections', {
+      method: 'POST',
+      headers: {
+        'apikey': DossierApp.KEY,
+        'Authorization': 'Bearer ' + DossierApp.KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ id: secId, sort_order: count, title: 'New Section', subtitle: 'Subtitle' })
+    });
+  }
+
+  function flashStatus() {
+    _statusEl.classList.add('show');
+    setTimeout(() => _statusEl.classList.remove('show'), 1500);
+  }
+})();
+</script>
+
+<script>
+/* ─────────────────────────────────────────────
    § 08 Live Tracker v3 — Supabase
    No auth needed. Both users just open & edit.
    ───────────────────────────────────────────── */
@@ -3150,6 +3610,7 @@ window.DossierApp = (function() {
   });
 
   /* ── Initial wiring ── */
+  window._wireSectionFn = wireSection; // expose for TOC manager
   document.querySelectorAll('section.section').forEach(wireSection);
 
   /* ── Load saved content from Supabase, then re-wire ── */
