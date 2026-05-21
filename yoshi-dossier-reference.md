@@ -1,5 +1,15 @@
 # Yoshi Dossier — Build Reference
 
+// Next Update i.e ## v7.2 — [date]
+
+**Changes:**
+- [what changed]
+
+**Fixes:**
+- [what broke and why]
+
+**New rules:**
+- [any new patterns established]
 
 #v7.1
 **Document:** `index.html` (~4820 lines, single self-contained file)
@@ -8,6 +18,8 @@
 **Backend:** Supabase (Postgres + Storage)
 **Supabase URL:** `https://odhvdtlhgvrpxcxsuzke.supabase.co`
 **Started:** v4 (16 Apr 2026) → v7.1 (21 May 2026)
+
+//
 
 ---
 
