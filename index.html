@@ -1766,6 +1766,99 @@
     .kv dl { grid-template-columns: 130px 1fr; }
     .colophon { grid-template-columns: 1fr; gap: 24px; }
     .reg { display: none; }
+    /* Phase 6 — mobile edit UI */
+    .add-panel { width: 200px; padding: 16px 12px; }
+    .add-panel-item { font-size: 12px; padding: 7px 8px; }
+    .qj-panel { width: 260px; }
+    .qj-toggle { top: 12px; right: 12px; }
+    .section-edit-btn { left: -36px; font-size: 8px; }
+    .section-edit-btn.cancel { left: -72px; }
+    .add-point::after { left: -24px; width: 18px; height: 18px; font-size: 12px; }
+    .block-delete { right: -22px; width: 18px; height: 18px; font-size: 9px; }
+    .fmt-bar { padding: 3px 4px; }
+    .fmt-btn { width: 26px; height: 24px; font-size: 12px; }
+  }
+
+  /* ── Link card (Phase 6) ── */
+  .link-card {
+    display: block;
+    border: 0.5px solid var(--rule);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-left: 60px;
+    max-width: 660px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .link-card:hover {
+    border-color: var(--ink-mid);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .link-card-title {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .link-card-desc {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-mid);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .link-card-url {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: var(--signal);
+  }
+
+  /* ── Print styles (Phase 6) ── */
+  @media print {
+    /* Hide all editing UI */
+    .section-edit-btn,
+    .add-point,
+    .block-delete,
+    .add-panel,
+    .add-panel-overlay,
+    .qj-toggle,
+    .qj-panel,
+    .qj-overlay,
+    .fmt-bar,
+    .table-controls,
+    .svg-edit-hint,
+    .fig-actions,
+    .fig-upload-zone,
+    .toc-manage-btn,
+    .toc-save-status { display: none !important; }
+
+    /* Remove sticky/fixed positioning */
+    .section-head {
+      position: static !important;
+      border-bottom: none !important;
+    }
+
+    /* Page breaks */
+    .page { page-break-before: always; }
+    .page:first-child { page-break-before: avoid; }
+    section.section { page-break-inside: avoid; }
+    .figure { page-break-inside: avoid; }
+
+    /* Clean backgrounds */
+    body { background: white; }
+    .cover { background: white; }
+    .stamp-card { border-color: #ccc; }
+    .running-head { border-color: #ccc; }
+
+    /* Ensure text prints */
+    * { color-adjust: exact; -webkit-print-color-adjust: exact; }
+
+    /* Remove outlines/shadows */
+    section.editing { outline: none !important; }
+    .link-card { box-shadow: none; }
   }
 </style>
 </head>
@@ -1784,7 +1877,7 @@
   <div class="cover-strip"></div>
 
   <div class="cover-head">
-    <div class="left">Project Dossier · v6.5</div>
+    <div class="left">Project Dossier · v7.0</div>
     <div class="center">DOC&nbsp;·&nbsp;YO&#8209;001</div>
     <div class="right">Compiled 21 May 2026</div>
   </div>
@@ -1853,7 +1946,7 @@
       </div>
       <div>
         <dt>Date</dt>
-        <dd>21 May 2026<br><span class="meta-sub">v6.5 · revision live</span></dd>
+        <dd>21 May 2026<br><span class="meta-sub">v7.0 · revision live</span></dd>
       </div>
     </dl>
   </div>
@@ -2757,7 +2850,7 @@
       </div>
       <div>
         <h5>Document</h5>
-        <p>Yoshi Project Dossier<br>v6.5 · compiled 21 May 2026<br>DOC · YO-001</p>
+        <p>Yoshi Project Dossier<br>v7.0 · compiled 21 May 2026<br>DOC · YO-001</p>
       </div>
     </div>
   </section>
@@ -2772,7 +2865,7 @@ window.DossierApp = (function() {
   const SUPABASE_URL = 'https://odhvdtlhgvrpxcxsuzke.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kaHZkdGxoZ3ZycHhjeHN1emtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDAyNDgsImV4cCI6MjA5NDcxNjI0OH0.b3Df-ifRyqKECA2PV0cFHTj12KK6xMzaZu_w7xN99uU';
 
-  const VERSION = 'v6.5';
+  const VERSION = 'v7.0';
   const COMPILED = '21 May 2026';
 
   /* Shared Supabase REST helper */
@@ -3489,6 +3582,7 @@ window.DossierApp = (function() {
     '<div class="add-panel-group">' +
       '<div class="add-panel-group-label">Data</div>' +
       '<button class="add-panel-item" data-block="kv"><span class="add-icon">=</span>Key-value pair</button>' +
+      '<button class="add-panel-item" data-block="linkcard"><span class="add-icon">↗</span>Link card</button>' +
     '</div>';
   document.body.appendChild(panel);
 
@@ -3620,6 +3714,28 @@ window.DossierApp = (function() {
         el.className = 'kv';
         el.innerHTML = '<dl><dt>Label</dt><dd>Value</dd></dl>';
         break;
+      case 'linkcard': {
+        const linkEl = document.createElement('a');
+        linkEl.className = 'link-card';
+        linkEl.href = '#';
+        linkEl.target = '_blank';
+        linkEl.contentEditable = 'false';
+        linkEl.innerHTML =
+          '<div class="link-card-title" contenteditable="true">Link title</div>' +
+          '<div class="link-card-desc" contenteditable="true">Brief description</div>' +
+          '<div class="link-card-url" contenteditable="true">https://example.com</div>';
+        setTimeout(function() {
+          var urlEl = linkEl.querySelector('.link-card-url');
+          if (urlEl) {
+            urlEl.addEventListener('blur', function() {
+              var url = urlEl.textContent.trim();
+              if (url && !url.startsWith('http')) url = 'https://' + url;
+              linkEl.href = url;
+            });
+          }
+        }, 0);
+        return linkEl;
+      }
       default:
         el.className = 'prose';
         el.innerHTML = '<p>New block.</p>';
