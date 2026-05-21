@@ -2433,11 +2433,18 @@ window.DossierApp = (function() {
 
   function hideBar() {
     bar.classList.remove('visible');
+    // Don't touch linkPopover here — it has its own lifecycle
+  }
+  function hideAll() {
+    bar.classList.remove('visible');
     linkPopover.classList.remove('visible');
   }
 
   /* Detect selection inside editing sections */
   document.addEventListener('selectionchange', () => {
+    // Don't interfere if the link popover is open (input has focus)
+    if (linkPopover.classList.contains('visible')) return;
+
     const sel = window.getSelection();
     if (!sel.rangeCount || sel.isCollapsed) { hideBar(); return; }
 
@@ -2517,6 +2524,13 @@ window.DossierApp = (function() {
   });
   linkPopover.addEventListener('mousedown', function(e) {
     e.preventDefault(); // prevent losing selection
+  });
+
+  /* Click outside dismisses both bar and link popover */
+  document.addEventListener('mousedown', function(e) {
+    if (!bar.contains(e.target) && !linkPopover.contains(e.target)) {
+      hideAll();
+    }
   });
 
   /* Keyboard shortcuts inside editing sections */
