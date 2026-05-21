@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yoshi Hill Run</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;overflow:hidden}
+  .gw{position:relative;width:100vw;height:100vh;max-height:720px;overflow:hidden;background:#C2CFA8}
+  canvas{display:block;width:100%;height:100%}
+
+  .hud{
+    position:absolute;top:0;left:0;right:0;
+    display:flex;justify-content:center;gap:52px;
+    padding:12px 24px;
+    font:500 11px/1 'DM Mono',monospace;letter-spacing:.1em;color:#5A5A56;
+    pointer-events:none;z-index:2;
+  }
+  .hud .v{color:#E83A0C;font-weight:500}
+  .hud .fw{transition:color .2s}
+  .hud .fw.warn{color:#E83A0C;animation:pulse .5s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  /* warning banner for yoshi approach */
+  .warn-banner{
+    position:absolute;top:50px;left:50%;transform:translateX(-50%);
+    font:500 13px/1 'DM Mono',monospace;letter-spacing:.18em;
+    color:#3A6830;background:rgba(194,207,168,.92);
+    padding:8px 28px;border:1.5px solid #3A6830;
+    pointer-events:none;z-index:3;opacity:0;transition:opacity .4s;
+    text-transform:uppercase;
+  }
+  .warn-banner.show{opacity:1;animation:warnPulse 1s infinite}
+  @keyframes warnPulse{0%,100%{opacity:.9}50%{opacity:.5}}
+
+  .ov{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(252,252,250,.88);backdrop-filter:blur(2px);
+    z-index:10;text-align:center;transition:opacity .5s;
+  }
+  .ov.hidden{opacity:0;pointer-events:none}
+  .ov h1{font:500 32px/1 'DM Mono',monospace;color:#111;letter-spacing:.08em;margin-bottom:2px}
+  .ov .sub{font:300 10px/1 'DM Mono',monospace;color:#9A9994;letter-spacing:.16em;text-transform:uppercase;margin-bottom:32px}
+  .ov .pr{font:400 13px/1.8 'DM Mono',monospace;color:#E83A0C;letter-spacing:.06em;animation:blink 1.2s ease-in-out infinite}
+  .ov .ks{font:300 10px/2 'DM Mono',monospace;color:#9A9994;margin-top:14px}
+  .ov .ks kbd{display:inline-block;border:1px solid #E6E5E1;border-radius:3px;padding:2px 7px;font-size:10px;background:#fff;color:#5A5A56}
+  .ov .rsn{font:400 10px/1 'DM Mono',monospace;letter-spacing:.14em;color:#9A9994;text-transform:uppercase;margin-bottom:4px}
+  .ov .fs{font:500 42px/1.2 'DM Mono',monospace;color:#E83A0C;letter-spacing:.04em}
+  .ov .fs small{font-size:14px;font-weight:300;color:#9A9994;letter-spacing:.08em}
+  .ov .bl{font:400 11px/1 'DM Mono',monospace;color:#5A5A56;margin:6px 0 24px}
+  .ov .em{font:400 11px/1.6 'DM Mono',monospace;color:#3A6830;margin-bottom:12px}
+  .vt{margin-bottom:24px;opacity:.3}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+</style>
+</head>
+<body>
+
+<div class="gw" id="gw">
+  <canvas id="c"></canvas>
+
+  <div class="hud">
+    <span>DIST <span class="v" id="hD">0</span> m</span>
+    <span>SPEED <span class="v" id="hS">·</span></span>
+    <span class="fw" id="hFw">FUEL <span class="v" id="hF">100</span>%</span>
+    <span>BEST <span class="v" id="hB">0</span> m</span>
+  </div>
+
+  <div class="warn-banner" id="warnBanner">⚠ SOMETHING IS COMING ⚠</div>
+
+  <div class="ov" id="titOv">
+    <svg class="vt" width="220" height="66" viewBox="0 0 740 335" fill="none" stroke="#C8C7C2" stroke-width="1.2">
+      <path d="M219.6,284.73l-6.28-26.28c-3.15-13.15-10.84-24.48-21.67-31.89-3.84-2.63-13.06-4.15-15.28-4.15h-46.62c-3.52,0-8.47,1.92-11.11,3.07-9.78,4.28-17.17,12.66-20.28,22.98l-5.65,19.29h-56.5v2.08H.12v-19.46h24.57l-14.19-77.2h1.74v-16.54h-2.77L75.31,20.89h51.13l6.68,6.24h130.09v-6.24h18.77v6.24h181.82l3.68-6.24h137.15l27.31,23.31v4.69l67.34,84.84h9.11l23.57,27.62-2.98,53.11h-20.83c-4.49,0-8.65,2.44-10.85,6.36l-11.5,20.56h37.68l-.69,5.88h17.17v12.73c-.22,1.56-1.09,4.8-2.53,5.52-2.04.96-24.84,5.06-38.84,7.43h-7.76l.37-6.15-73.86,10.15-20.22-42.57c-3.44-7.27-10.87-11.96-18.92-11.96h-42.52c-2.52,0-14.8,2.37-19.2,6.32-13.36,11.98-21.4,28.61-22.62,46.84l-.62,9.15H219.6Z"/>
+      <path d="M553.32,334.58c-28.46,0-51.61-23.15-51.61-51.61s23.15-51.61,51.61-51.61,51.61,23.15,51.61,51.61-23.15,51.61-51.61,51.61ZM553.32,248.73c-18.88,0-34.24,15.36-34.24,34.24s15.36,34.24,34.24,34.24,34.24-15.36,34.24-34.24-15.36-34.24-34.24-34.24Z"/>
+      <path d="M153.86,334.58c-28.46,0-51.61-23.15-51.61-51.61s23.15-51.61,51.61-51.61,51.61,23.15,51.61,51.61-23.15,51.61-51.61,51.61ZM153.86,248.73c-18.88,0-34.24,15.36-34.24,34.24s15.36,34.24,34.24,34.24,34.24-15.36,34.24-34.24-15.36-34.24-34.24-34.24Z"/>
+    </svg>
+    <h1>YOSHI HILL RUN</h1>
+    <div class="sub">1983 VW Vanagon GL Westfalia · downhill</div>
+    <div class="pr">press any key or tap to start</div>
+    <div class="ks"><kbd>←</kbd> <kbd>→</kbd> steer &nbsp;·&nbsp; <kbd>↑</kbd> boost &nbsp;·&nbsp; <kbd>↓</kbd> brake</div>
+  </div>
+
+  <div class="ov hidden" id="endOv">
+    <div class="em" id="eMsg"></div>
+    <div class="rsn" id="eRsn">CRASHED</div>
+    <div class="fs" id="eSc">0 <small>m</small></div>
+    <div class="bl" id="eBst">BEST 0 m</div>
+    <div class="pr">press any key or tap to retry</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  YOSHI HILL RUN · v3
+//  SkiFree-style: descend from top, open mountain terrain
+//  After 600m — Yoshi appears. Run.
+// ═══════════════════════════════════════════════════════
+
+const P = { // palette
+  grass:'#B8C49E', grassDk:'#A4B088', grassLt:'#CCD8B6',
+  snow:'#E8E6E0', snowDk:'#D4D2CC', snowLt:'#F4F2EE',
+  dirt:'#C8BDA8', dirtDk:'#B0A68E',
+  ink:'#111', inkMid:'#5A5A56', inkLt:'#9A9994', inkFaint:'#C8C7C2',
+  signal:'#E83A0C', amber:'#F0AD3B',
+  tree1:'#2E5424', tree2:'#3E7232', tree3:'#58943E',
+  rock:'#8A857C', rockLt:'#A09B92', rockDk:'#706B64',
+  body:'#F2EDD8', bodyStroke:'#8A8678',
+  // yoshi dino colors
+  yG:'#4CAF50', yGd:'#2E7D32', yGl:'#81C784',
+  yW:'#FFFDE7', yR:'#E83A0C', yO:'#FF8A65',
+};
+
+const cv = document.getElementById('c');
+const cx = cv.getContext('2d');
+
+function resize() {
+  const g = document.getElementById('gw');
+  cv.width = g.clientWidth; cv.height = g.clientHeight;
+}
+window.addEventListener('resize', resize); resize();
+
+const W = () => cv.width, H = () => cv.height;
+
+// DOM
+const titOv = document.getElementById('titOv');
+const endOv = document.getElementById('endOv');
+const wBan  = document.getElementById('warnBanner');
+const hD = document.getElementById('hD'), hS = document.getElementById('hS');
+const hF = document.getElementById('hF'), hB = document.getElementById('hB');
+const hFw = document.getElementById('hFw');
+const eMsg = document.getElementById('eMsg'), eRsn = document.getElementById('eRsn');
+const eSc = document.getElementById('eSc'), eBst = document.getElementById('eBst');
+
+// ── state ──
+let mode = 'title', best = 0;
+let van, obs, pix, parts, dust;
+let spd, dist, fuel, tilt, inv;
+let yoshi, yoshiWarned, yoshiActive, yoshiAte;
+let keys = {}, shakeT = 0, deathTime = 0;
+let touchX = null, touchDir = 0;
+let frame = 0;
+
+const YOSHI_DIST = 600;  // distance to trigger
+const YOSHI_WARN = 500;  // warning distance
+
+function init() {
+  van = { x: W() / 2, y: H() * 0.25, w: 46, h: 64, vx: 0 };
+  obs = []; pix = []; parts = []; dust = [];
+  spd = 2.5; dist = 0; fuel = 100; tilt = 0; inv = 0; shakeT = 0; frame = 0;
+  yoshi = null; yoshiWarned = false; yoshiActive = false; yoshiAte = false;
+  wBan.classList.remove('show');
+
+  // pre-populate terrain below the van
+  for (let i = 0; i < 30; i++) {
+    spawnTerrain(van.y + 80 + Math.random() * (H() - van.y + 200));
+  }
+}
+
+// ── terrain generation ──
+
+function spawnTerrain(atY) {
+  const w = W();
+  const y = atY !== undefined ? atY : H() + 20 + Math.random() * 60;
+  const r = Math.random();
+
+  if (r < 0.45) {
+    // evergreen tree
+    const s = 0.7 + Math.random() * 0.7;
+    obs.push({ t:'tree', x: 30 + Math.random() * (w - 60), y, s, hw: 10 * s, hh: 14 * s });
+  } else if (r < 0.7) {
+    // rock
+    const s = 0.6 + Math.random() * 0.6;
+    obs.push({ t:'rock', x: 40 + Math.random() * (w - 80), y, s, hw: 9 * s, hh: 8 * s });
+  } else if (r < 0.82) {
+    // tree cluster (2-3 trees close together)
+    const bx = 60 + Math.random() * (w - 120);
+    for (let i = 0; i < 2 + Math.floor(Math.random() * 2); i++) {
+      const s = 0.6 + Math.random() * 0.5;
+      obs.push({ t:'tree', x: bx + (Math.random() - 0.5) * 50, y: y + (Math.random() - 0.5) * 30, s, hw: 10 * s, hh: 14 * s });
+    }
+  } else if (r < 0.92) {
+    // boulder cluster
+    const bx = 50 + Math.random() * (w - 100);
+    for (let i = 0; i < 2; i++) {
+      const s = 0.5 + Math.random() * 0.4;
+      obs.push({ t:'rock', x: bx + (Math.random() - 0.5) * 40, y: y + (Math.random() - 0.5) * 20, s, hw: 9 * s, hh: 8 * s });
+    }
+  } else {
+    // small bush / shrub (no collision, decoration)
+    obs.push({ t:'bush', x: 20 + Math.random() * (w - 40), y, s: 0.5 + Math.random() * 0.5, hw: 0, hh: 0 });
+  }
+}
+
+function spawnPickup() {
+  const w = W();
+  const x = 60 + Math.random() * (w - 120);
+  pix.push({ t: Math.random() < 0.7 ? 'gas' : 'wrench', x, y: H() + 15, w: 14, h: 14 });
+}
+
+// ── drawing ──
+
+function drawVan(x, y, lean) {
+  cx.save(); cx.translate(x, y); cx.rotate(lean * 0.025);
+  const w = 21, h = 33;
+
+  // shadow
+  cx.fillStyle = 'rgba(0,0,0,.07)';
+  cx.beginPath(); cx.ellipse(0, h + 5, 26, 7, 0, 0, Math.PI * 2); cx.fill();
+
+  // body — van faces DOWN the hill (front at bottom)
+  cx.fillStyle = P.body; cx.strokeStyle = P.bodyStroke;
+  cx.lineWidth = 1.4; cx.lineJoin = 'round';
+  cx.beginPath();
+  cx.moveTo(-w, -h + 8); cx.lineTo(-w + 4, -h); cx.lineTo(w - 4, -h);
+  cx.lineTo(w, -h + 8); cx.lineTo(w, h - 5); cx.lineTo(w - 3, h);
+  cx.lineTo(-w + 3, h); cx.lineTo(-w, h - 5); cx.closePath();
+  cx.fill(); cx.stroke();
+
+  // pop-top (rear/top of van as seen from above)
+  cx.fillStyle = '#E8E3D0'; cx.strokeStyle = P.inkFaint; cx.lineWidth = .8;
+  cx.fillRect(-16, -24, 32, 20); cx.strokeRect(-16, -24, 32, 20);
+
+  // rear window (top of sprite = back of van)
+  cx.fillStyle = 'rgba(160,195,215,.3)';
+  cx.fillRect(-13, -h + 2, 26, 10);
+
+  // windshield (bottom of sprite = front, facing downhill)
+  cx.fillStyle = 'rgba(160,195,215,.45)';
+  cx.fillRect(-15, h - 14, 30, 12);
+  cx.strokeStyle = P.inkFaint; cx.lineWidth = .7;
+  cx.strokeRect(-15, h - 14, 30, 12);
+  cx.beginPath(); cx.moveTo(0, h - 14); cx.lineTo(0, h - 2);
+  cx.lineWidth = .5; cx.stroke();
+
+  // belt line
+  cx.fillStyle = P.signal; cx.globalAlpha = .6;
+  cx.fillRect(-w - .5, -1, w * 2 + 1, 3); cx.globalAlpha = 1;
+
+  // wheels
+  cx.fillStyle = '#2A2A2A';
+  [[-w - 4, -16, 5.5, 11], [w - 1.5, -16, 5.5, 11],
+   [-w - 4, 11, 5.5, 11], [w - 1.5, 11, 5.5, 11]].forEach(([rx, ry, rw, rh]) => {
+    cx.beginPath(); cx.roundRect(rx, ry, rw, rh, 2); cx.fill();
+  });
+
+  // headlights at bottom (downhill-facing)
+  cx.fillStyle = P.amber;
+  cx.fillRect(-14, h - 1, 7, 4); cx.fillRect(7, h - 1, 7, 4);
+
+  // taillights at top
+  cx.fillStyle = P.signal;
+  cx.fillRect(-16, -h - 2, 7, 3.5); cx.fillRect(9, -h - 2, 7, 3.5);
+
+  // VW badge (rear, top)
+  cx.strokeStyle = P.inkFaint; cx.lineWidth = .6;
+  cx.beginPath(); cx.arc(0, -h + 8, 3.5, 0, Math.PI * 2); cx.stroke();
+
+  cx.restore();
+}
+
+function drawTree(x, y, s) {
+  cx.save(); cx.translate(x, y); s = s || 1;
+  // shadow
+  cx.fillStyle = 'rgba(0,0,0,.06)';
+  cx.beginPath(); cx.ellipse(2, 16 * s, 12 * s, 5 * s, 0, 0, Math.PI * 2); cx.fill();
+  // trunk
+  cx.fillStyle = '#6B5A3E'; cx.fillRect(-2.5 * s, 0, 5 * s, 16 * s);
+  // foliage (3 tiers)
+  [P.tree1, P.tree2, P.tree3].forEach((c, i) => {
+    cx.fillStyle = c; cx.beginPath();
+    cx.moveTo(0, (-28 + i * 8) * s);
+    cx.lineTo((-14 + i) * s, (-10 + i * 8) * s);
+    cx.lineTo((14 - i) * s, (-10 + i * 8) * s);
+    cx.closePath(); cx.fill();
+  });
+  cx.restore();
+}
+
+function drawRock(x, y, s) {
+  cx.save(); cx.translate(x, y); s = s || 1;
+  cx.fillStyle = 'rgba(0,0,0,.05)';
+  cx.beginPath(); cx.ellipse(1, 6 * s, 14 * s, 5 * s, 0, 0, Math.PI * 2); cx.fill();
+  // main shape
+  cx.fillStyle = P.rock; cx.strokeStyle = P.inkFaint; cx.lineWidth = .8;
+  cx.beginPath();
+  cx.moveTo(-11 * s, 4 * s); cx.lineTo(-9 * s, -8 * s); cx.lineTo(2 * s, -11 * s);
+  cx.lineTo(12 * s, -6 * s); cx.lineTo(11 * s, 5 * s); cx.closePath();
+  cx.fill(); cx.stroke();
+  // highlight
+  cx.fillStyle = P.rockLt; cx.beginPath();
+  cx.moveTo(-5 * s, -6 * s); cx.lineTo(1 * s, -10 * s); cx.lineTo(8 * s, -5 * s); cx.lineTo(0, -3 * s);
+  cx.closePath(); cx.fill();
+  cx.restore();
+}
+
+function drawBush(x, y, s) {
+  cx.save(); cx.translate(x, y); s = s || 1;
+  cx.fillStyle = 'rgba(0,0,0,.03)';
+  cx.beginPath(); cx.ellipse(0, 4 * s, 8 * s, 3 * s, 0, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = '#7A9A5E';
+  cx.beginPath(); cx.ellipse(0, -2 * s, 7 * s, 5 * s, 0, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = '#8AAA6A';
+  cx.beginPath(); cx.ellipse(-2 * s, -3 * s, 4 * s, 3.5 * s, 0, 0, Math.PI * 2); cx.fill();
+  cx.restore();
+}
+
+function drawGas(x, y) {
+  cx.save(); cx.translate(x, y + Math.sin(Date.now() * .003) * 2.5);
+  cx.fillStyle = 'rgba(232,58,12,.1)';
+  cx.beginPath(); cx.arc(0, 0, 16, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = P.signal;
+  cx.beginPath(); cx.roundRect(-7, -9, 14, 18, 2); cx.fill();
+  cx.strokeStyle = '#fff'; cx.lineWidth = 1.8; cx.lineCap = 'round';
+  cx.beginPath(); cx.moveTo(-3, -9); cx.lineTo(-3, -13); cx.lineTo(3, -13); cx.lineTo(3, -9); cx.stroke();
+  cx.fillStyle = '#B0300A'; cx.fillRect(5, -13, 4, 4);
+  cx.fillStyle = '#fff'; cx.font = '700 9px "DM Mono"'; cx.textAlign = 'center';
+  cx.fillText('F', 0, 5);
+  cx.restore();
+}
+
+function drawWrench(x, y) {
+  cx.save(); cx.translate(x, y + Math.sin(Date.now() * .003 + 1) * 2.5);
+  cx.fillStyle = 'rgba(240,173,59,.12)';
+  cx.beginPath(); cx.arc(0, 0, 15, 0, Math.PI * 2); cx.fill();
+  cx.strokeStyle = P.amber; cx.lineWidth = 3; cx.lineCap = 'round';
+  cx.beginPath(); cx.moveTo(-7, 7); cx.lineTo(5, -5); cx.stroke();
+  cx.lineWidth = 2.2;
+  cx.beginPath(); cx.arc(6, -6, 5, -.8, 3.9); cx.stroke();
+  cx.beginPath(); cx.arc(-8, 8, 4, 2.2, 6.9); cx.stroke();
+  cx.restore();
+}
+
+// ── THE YOSHI ──
+
+function drawYoshi(x, y) {
+  cx.save(); cx.translate(x, y);
+
+  const bob = Math.sin(frame * 0.15) * 3;
+  const legPhase = Math.sin(frame * 0.3);
+
+  // shadow
+  cx.fillStyle = 'rgba(0,0,0,.1)';
+  cx.beginPath(); cx.ellipse(0, 38, 32, 10, 0, 0, Math.PI * 2); cx.fill();
+
+  // legs (animated stride)
+  cx.fillStyle = P.yG;
+  // left leg
+  cx.save(); cx.translate(-14, 22);
+  cx.rotate(legPhase * 0.3);
+  cx.beginPath(); cx.roundRect(-5, 0, 10, 18, 4); cx.fill();
+  // boot
+  cx.fillStyle = P.yO;
+  cx.beginPath(); cx.roundRect(-6, 14, 14, 7, 3); cx.fill();
+  cx.restore();
+  // right leg
+  cx.save(); cx.translate(14, 22);
+  cx.rotate(-legPhase * 0.3);
+  cx.fillStyle = P.yG;
+  cx.beginPath(); cx.roundRect(-5, 0, 10, 18, 4); cx.fill();
+  cx.fillStyle = P.yO;
+  cx.beginPath(); cx.roundRect(-6, 14, 14, 7, 3); cx.fill();
+  cx.restore();
+
+  // body
+  cx.translate(0, bob);
+
+  // shell (behind body)
+  cx.fillStyle = P.signal;
+  cx.beginPath(); cx.ellipse(0, -4, 22, 18, 0, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = '#C0300A';
+  cx.beginPath(); cx.ellipse(0, -6, 16, 12, 0, 0, Math.PI); cx.fill();
+
+  // belly
+  cx.fillStyle = P.yW;
+  cx.beginPath(); cx.ellipse(0, 6, 18, 22, 0, 0, Math.PI * 2); cx.fill();
+
+  // green body overlay
+  cx.fillStyle = P.yG;
+  cx.beginPath(); cx.ellipse(0, 0, 22, 26, 0, Math.PI * 0.15, Math.PI * 0.85, true); cx.fill();
+
+  // arms
+  cx.fillStyle = P.yG;
+  cx.save(); cx.translate(-22, -2); cx.rotate(-.3 + legPhase * 0.2);
+  cx.beginPath(); cx.roundRect(-4, -4, 8, 18, 3); cx.fill(); cx.restore();
+  cx.save(); cx.translate(22, -2); cx.rotate(.3 - legPhase * 0.2);
+  cx.beginPath(); cx.roundRect(-4, -4, 8, 18, 3); cx.fill(); cx.restore();
+
+  // head
+  cx.fillStyle = P.yG;
+  cx.beginPath(); cx.ellipse(0, -30, 20, 18, 0, 0, Math.PI * 2); cx.fill();
+
+  // snout (big round nose, facing down toward van)
+  cx.fillStyle = P.yGl;
+  cx.beginPath(); cx.ellipse(0, -18, 14, 10, 0, 0, Math.PI * 2); cx.fill();
+
+  // nostrils
+  cx.fillStyle = P.yGd;
+  cx.beginPath(); cx.arc(-4, -16, 2, 0, Math.PI * 2); cx.fill();
+  cx.beginPath(); cx.arc(4, -16, 2, 0, Math.PI * 2); cx.fill();
+
+  // eyes (looking down eagerly)
+  cx.fillStyle = '#fff';
+  cx.beginPath(); cx.ellipse(-8, -36, 7, 8, 0, 0, Math.PI * 2); cx.fill();
+  cx.beginPath(); cx.ellipse(8, -36, 7, 8, 0, 0, Math.PI * 2); cx.fill();
+  // pupils (looking down at the van)
+  cx.fillStyle = '#111';
+  cx.beginPath(); cx.arc(-7, -33, 3.5, 0, Math.PI * 2); cx.fill();
+  cx.beginPath(); cx.arc(9, -33, 3.5, 0, Math.PI * 2); cx.fill();
+  // gleam
+  cx.fillStyle = '#fff';
+  cx.beginPath(); cx.arc(-8.5, -35, 1.5, 0, Math.PI * 2); cx.fill();
+  cx.beginPath(); cx.arc(7.5, -35, 1.5, 0, Math.PI * 2); cx.fill();
+
+  // head crest / ridge
+  cx.fillStyle = P.signal;
+  cx.beginPath();
+  cx.moveTo(-6, -46); cx.lineTo(0, -52); cx.lineTo(6, -46);
+  cx.closePath(); cx.fill();
+
+  cx.restore();
+}
+
+// ── particles ──
+
+function burst(x, y, color, n) {
+  for (let i = 0; i < n; i++)
+    parts.push({ x, y, vx: (Math.random() - .5) * 5, vy: (Math.random() - .5) * 5,
+      life: 20 + Math.random() * 20, color, r: 1.5 + Math.random() * 3 });
+}
+
+function addDust(x, y) {
+  dust.push({ x: x + (Math.random() - .5) * 8, y, vx: (Math.random() - .5) * 1,
+    vy: Math.random() * .5, life: 20 + Math.random() * 12, ml: 32, r: 2 + Math.random() * 2.5 });
+}
+
+// ── UPDATE ──
+
+function update() {
+  if (mode !== 'play') return;
+  frame++;
+  const w = W(), h = H();
+
+  // input
+  let si = 0, ai = 0;
+  if (keys['ArrowLeft'] || keys['KeyA'] || touchDir < 0) si = -1;
+  if (keys['ArrowRight'] || keys['KeyD'] || touchDir > 0) si = 1;
+  if (keys['ArrowUp'] || keys['KeyW']) ai = 1;    // boost = go faster downhill
+  if (keys['ArrowDown'] || keys['KeyS']) ai = -1;  // brake
+
+  // speed
+  spd = Math.min(spd + .0012, 7);
+  if (ai > 0) spd = Math.min(spd + .06, 9.5);
+  if (ai < 0) spd = Math.max(spd - .05, 1.5);
+
+  // steer
+  van.vx += si * .7;
+  van.vx *= .86;
+  van.x += van.vx;
+  tilt = van.vx * .6;
+  van.x = Math.max(28, Math.min(w - 28, van.x));
+
+  // scroll = terrain moves UP as van goes downhill
+  const scroll = spd * 1.4;
+  dist += spd * .28;
+  fuel -= .013 + spd * .0018;
+
+  if (fuel <= 0 && !yoshiActive) { fuel = 0; die('OUT OF FUEL'); return; }
+  if (fuel <= 0) fuel = 0;
+
+  // scroll all objects UP
+  for (const o of obs) o.y -= scroll;
+  for (const p of pix) p.y -= scroll;
+
+  // cull objects that scrolled off the top
+  obs = obs.filter(o => o.y > -60);
+  pix = pix.filter(p => p.y > -30 && !p.dead);
+
+  // spawn new terrain at the bottom
+  const bottomMost = obs.length ? Math.max(...obs.map(o => o.y)) : 0;
+  if (bottomMost < h + 40) {
+    for (let i = 0; i < 3; i++) spawnTerrain(h + 20 + Math.random() * 120);
+  }
+
+  // pickups
+  if (Math.random() < .011) spawnPickup();
+
+  // ── YOSHI CHASE ──
+  if (dist >= YOSHI_WARN && !yoshiWarned) {
+    yoshiWarned = true;
+    wBan.classList.add('show');
+  }
+  if (dist >= YOSHI_DIST && !yoshiActive) {
+    yoshiActive = true;
+    wBan.textContent = '🦖 YOSHI IS HERE 🦖';
+    yoshi = { x: van.x, y: -80, spd: spd + 0.3 };
+    // give a little extra fuel for the chase
+    fuel = Math.min(100, fuel + 15);
+  }
+  if (yoshiActive && yoshi && !yoshiAte) {
+    // yoshi chases the van
+    const dx = van.x - yoshi.x;
+    yoshi.x += dx * 0.03;  // homes in on van's x
+    // yoshi speed: slightly faster than base, player can outrun with boost briefly
+    yoshi.spd = Math.max(yoshi.spd, spd * 0.85 + 1.8);
+    yoshi.y += (yoshi.spd - spd) * 1.2 + 0.6;  // net downward movement on screen
+
+    // ground pound dust
+    if (frame % 8 === 0) {
+      addDust(yoshi.x - 12, yoshi.y + 36);
+      addDust(yoshi.x + 12, yoshi.y + 36);
+    }
+
+    // catch the van
+    if (Math.abs(yoshi.x - van.x) < 30 && Math.abs(yoshi.y - van.y) < 40) {
+      yoshiAte = true;
+      shakeT = 25;
+      burst(van.x, van.y, P.yG, 25);
+      burst(van.x, van.y, P.signal, 15);
+      die('EATEN BY YOSHI');
+    }
+  }
+
+  // ── collisions ──
+  if (inv > 0) inv--;
+  if (inv <= 0 && !yoshiAte) {
+    for (const o of obs) {
+      if (o.hw === 0) continue; // skip bushes
+      const dx = Math.abs(van.x - o.x);
+      const dy = Math.abs(van.y - o.y);
+      if (dx < (van.w * .35 + o.hw) && dy < (van.h * .35 + o.hh)) {
+        die('CRASHED'); return;
+      }
+    }
+  }
+
+  // pickups
+  for (const p of pix) {
+    if (p.dead) continue;
+    if (Math.abs(van.x - p.x) < 26 && Math.abs(van.y - p.y) < 26) {
+      p.dead = true;
+      if (p.t === 'gas') fuel = Math.min(100, fuel + 30);
+      else inv = 150;
+      burst(p.x, p.y, p.t === 'gas' ? P.signal : P.amber, 10);
+    }
+  }
+
+  // dust behind van (going upward since van descends)
+  if (spd > 3 && Math.random() < .35) {
+    addDust(van.x - 16, van.y - 34);
+    addDust(van.x + 16, van.y - 34);
+  }
+
+  // particles
+  parts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .08; p.life--; });
+  parts = parts.filter(p => p.life > 0);
+  dust.forEach(d => { d.x += d.vx; d.y += d.vy; d.life--; });
+  dust = dust.filter(d => d.life > 0);
+  if (shakeT > 0) shakeT--;
+
+  // HUD
+  hD.textContent = Math.floor(dist);
+  hS.textContent = ['·','··','···','····','·····'][Math.min(4, Math.floor((spd - 1.5) / 1.6))];
+  hF.textContent = Math.max(0, Math.floor(fuel));
+  hFw.classList.toggle('warn', fuel < 20);
+}
+
+function die(reason) {
+  mode = 'dead'; shakeT = Math.max(shakeT, 18); deathTime = Date.now();
+  if (!yoshiAte) { burst(van.x, van.y, P.signal, 20); burst(van.x, van.y, P.amber, 12); }
+  if (Math.floor(dist) > best) best = Math.floor(dist);
+  hB.textContent = best;
+  setTimeout(() => {
+    if (yoshiAte) {
+      eMsg.textContent = 'nom nom nom';
+      eMsg.style.display = '';
+    } else {
+      eMsg.style.display = 'none';
+    }
+    eRsn.textContent = reason;
+    eSc.innerHTML = Math.floor(dist) + ' <small>m</small>';
+    eBst.textContent = 'BEST ' + best + ' m';
+    endOv.classList.remove('hidden');
+    wBan.classList.remove('show');
+  }, yoshiAte ? 1000 : 700);
+}
+
+// ── DRAW ──
+
+function draw() {
+  const w = W(), h = H();
+  cx.save();
+  if (shakeT > 0) cx.translate((Math.random() - .5) * shakeT * .7, (Math.random() - .5) * shakeT * .7);
+
+  // ── terrain background ──
+  // gradient: greener at top (already passed), stonier at bottom (ahead)
+  const grad = cx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, P.grassLt);
+  grad.addColorStop(0.5, P.grass);
+  grad.addColorStop(1, P.grassDk);
+  cx.fillStyle = grad;
+  cx.fillRect(0, 0, w, h);
+
+  // terrain texture — grass tufts scrolling
+  cx.fillStyle = P.grassDk;
+  for (let y = 0; y < h; y += 14) {
+    const off = ((y + dist * 12) % 28) < 14 ? 0 : 12;
+    for (let x = off; x < w; x += 48) cx.fillRect(x, y, 18, 1.5);
+  }
+  cx.fillStyle = P.grassLt;
+  for (let y = 5; y < h; y += 26) {
+    const off = ((y + dist * 12 + 13) % 52) < 26 ? 22 : 0;
+    for (let x = off; x < w; x += 64) cx.fillRect(x, y, 12, 1);
+  }
+
+  // dirt patches (random based on distance)
+  cx.fillStyle = P.dirt;
+  cx.globalAlpha = .25;
+  const seed = Math.floor(dist / 2);
+  for (let i = 0; i < 5; i++) {
+    const px = ((seed * 13 + i * 997) % w);
+    const py = ((seed * 7 + i * 503 + dist * 12) % (h + 200)) - 100;
+    cx.beginPath(); cx.ellipse(px, py, 30 + (i * 17) % 20, 12 + (i * 11) % 8, (i * 0.5) % 1, 0, Math.PI * 2); cx.fill();
+  }
+  cx.globalAlpha = 1;
+
+  // snow patches at higher distances
+  if (dist > 300) {
+    cx.fillStyle = P.snow;
+    cx.globalAlpha = Math.min(.35, (dist - 300) / 1000);
+    for (let i = 0; i < 6; i++) {
+      const px = ((seed * 19 + i * 773) % w);
+      const py = ((seed * 11 + i * 601 + dist * 12) % (h + 300)) - 150;
+      cx.beginPath(); cx.ellipse(px, py, 40 + (i * 23) % 30, 15 + (i * 13) % 10, (i * 0.7) % 2, 0, Math.PI * 2); cx.fill();
+    }
+    cx.globalAlpha = 1;
+  }
+
+  // dust particles
+  for (const d of dust) {
+    cx.globalAlpha = (d.life / d.ml) * .22;
+    cx.fillStyle = P.dirtDk;
+    cx.beginPath(); cx.arc(d.x, d.y, d.r, 0, Math.PI * 2); cx.fill();
+  }
+  cx.globalAlpha = 1;
+
+  // ── depth-sort all objects + van + yoshi ──
+  const all = [
+    ...obs.map(o => ({ ...o, cat: 'ob' })),
+    ...pix.filter(p => !p.dead).map(p => ({ ...p, cat: 'px' })),
+  ];
+  // van
+  if (!yoshiAte) all.push({ x: van.x, y: van.y, cat: 'van' });
+  // yoshi
+  if (yoshiActive && yoshi) all.push({ x: yoshi.x, y: yoshi.y, cat: 'yoshi' });
+
+  all.sort((a, b) => a.y - b.y);
+
+  for (const o of all) {
+    if (o.y < -80 || o.y > h + 80) continue;
+    switch (o.cat) {
+      case 'ob':
+        if (o.t === 'tree') drawTree(o.x, o.y, o.s);
+        else if (o.t === 'rock') drawRock(o.x, o.y, o.s);
+        else drawBush(o.x, o.y, o.s);
+        break;
+      case 'px':
+        if (o.t === 'gas') drawGas(o.x, o.y);
+        else drawWrench(o.x, o.y);
+        break;
+      case 'van':
+        if (inv > 0 && Math.floor(inv / 5) % 2) cx.globalAlpha = .4;
+        drawVan(van.x, van.y, tilt);
+        cx.globalAlpha = 1;
+        break;
+      case 'yoshi':
+        drawYoshi(o.x, o.y);
+        break;
+    }
+  }
+
+  // particles
+  for (const p of parts) {
+    cx.globalAlpha = Math.min(1, p.life / 20);
+    cx.fillStyle = p.color;
+    cx.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r);
+  }
+  cx.globalAlpha = 1;
+
+  // low fuel
+  if (fuel < 20 && fuel > 0 && mode === 'play' && !yoshiActive) {
+    cx.globalAlpha = .25 + Math.sin(Date.now() * .008) * .15;
+    cx.fillStyle = P.signal;
+    cx.font = '500 12px "DM Mono"'; cx.textAlign = 'center';
+    cx.fillText('▼  LOW FUEL  ▼', w / 2, h - 24);
+    cx.globalAlpha = 1;
+  }
+
+  cx.restore();
+}
+
+// ── input ──
+
+function tryStart() {
+  if (mode === 'dead' && Date.now() - deathTime < 800) return;
+  init(); resize(); mode = 'play';
+  titOv.classList.add('hidden');
+  endOv.classList.add('hidden');
+}
+
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (mode !== 'play') tryStart();
+});
+document.addEventListener('keyup', e => keys[e.code] = false);
+
+cv.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (mode !== 'play') { tryStart(); return; }
+  touchX = e.touches[0].clientX;
+}, { passive: false });
+cv.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (touchX !== null) {
+    const dx = e.touches[0].clientX - touchX;
+    touchDir = dx > 20 ? 1 : dx < -20 ? -1 : 0;
+  }
+}, { passive: false });
+cv.addEventListener('touchend', e => {
+  e.preventDefault(); touchX = null; touchDir = 0;
+}, { passive: false });
+
+// ── loop ──
+init();
+(function loop() { update(); draw(); requestAnimationFrame(loop); })();
+</script>
+</body>
+</html>
