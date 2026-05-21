@@ -2,14 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Yoshi Hill Run</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;overflow:hidden}
-  .gw{position:relative;width:100vw;height:100vh;max-height:720px;overflow:hidden;background:#C2CFA8}
+  html,body{overflow:hidden;touch-action:none;-webkit-touch-callout:none}
+  body{background:#4a7a2e;display:flex;align-items:flex-start;justify-content:center;min-height:100vh}
+  .gw{position:relative;width:100vw;height:100vh;overflow:hidden;background:#4a7a2e;touch-action:none;user-select:none;-webkit-user-select:none}
   canvas{display:block;width:100%;height:100%}
+
+  /* touch zone indicators */
+  .touch-zones{
+    display:none;position:absolute;inset:0;z-index:1;pointer-events:none;
+  }
+  .touch-zone{
+    position:absolute;top:0;bottom:0;
+    display:flex;align-items:center;justify-content:center;
+    font:300 28px/1 'DM Mono',monospace;color:rgba(0,0,0,.06);
+    transition:background .15s,color .15s;
+  }
+  .touch-zone.left{left:0;width:33.3%}
+  .touch-zone.mid{left:33.3%;width:33.4%}
+  .touch-zone.right{right:0;width:33.3%}
+  .touch-zone.active{background:rgba(0,0,0,.04);color:rgba(0,0,0,.12)}
+
+  /* show zones on touch devices during play */
+  @media (hover:none) and (pointer:coarse){
+    .touch-zones.playing{display:flex}
+  }
 
   .hud{
     position:absolute;top:0;left:0;right:0;
@@ -61,6 +85,12 @@
 <div class="gw" id="gw">
   <canvas id="c"></canvas>
 
+  <div class="touch-zones" id="touchZones">
+    <div class="touch-zone left" id="tzL">◂</div>
+    <div class="touch-zone mid" id="tzM">↑</div>
+    <div class="touch-zone right" id="tzR">▸</div>
+  </div>
+
   <div class="hud">
     <span>DIST <span class="v" id="hD">0</span> m</span>
     <span>SPEED <span class="v" id="hS">·</span></span>
@@ -78,8 +108,8 @@
     </svg>
     <h1>YOSHI HILL RUN</h1>
     <div class="sub">1983 VW Vanagon GL Westfalia · downhill</div>
-    <div class="pr">press any key or tap to start</div>
-    <div class="ks"><kbd>←</kbd> <kbd>→</kbd> steer &nbsp;·&nbsp; <kbd>↑</kbd> boost &nbsp;·&nbsp; <kbd>↓</kbd> brake</div>
+    <div class="pr" id="startPrompt">press any key or tap to start</div>
+    <div class="ks" id="ctrlHint"><kbd>←</kbd> <kbd>→</kbd> steer &nbsp;·&nbsp; <kbd>↑</kbd> boost &nbsp;·&nbsp; <kbd>SPACE</kbd> jump</div>
   </div>
 
   <div class="ov hidden" id="endOv">
@@ -98,16 +128,16 @@
 //  After 600m — Yoshi appears. Run.
 // ═══════════════════════════════════════════════════════
 
-const P = { // palette
-  grass:'#B8C49E', grassDk:'#A4B088', grassLt:'#CCD8B6',
-  snow:'#E8E6E0', snowDk:'#D4D2CC', snowLt:'#F4F2EE',
-  dirt:'#C8BDA8', dirtDk:'#B0A68E',
+const P = { // palette — flat, crude, SkiFree-faithful
+  grass:'#4a7a2e',  // flat field green
+  grassTuft:'#3d6926', // barely-darker grass pixel
   ink:'#111', inkMid:'#5A5A56', inkLt:'#9A9994', inkFaint:'#C8C7C2',
   signal:'#E83A0C', amber:'#F0AD3B',
-  tree1:'#2E5424', tree2:'#3E7232', tree3:'#58943E',
-  rock:'#8A857C', rockLt:'#A09B92', rockDk:'#706B64',
+  treeDk:'#1a5c0a', treeLt:'#2d8a14',  // two flat greens, no gradient
+  trunk:'#5a3a1a',
+  rock:'#787872',
   body:'#F2EDD8', bodyStroke:'#8A8678',
-  // yoshi dino colors
+  // yoshi dino
   yG:'#4CAF50', yGd:'#2E7D32', yGl:'#81C784',
   yW:'#FFFDE7', yR:'#E83A0C', yO:'#FF8A65',
 };
@@ -138,6 +168,7 @@ let mode = 'title', best = 0;
 let van, obs, pix, parts, dust;
 let spd, dist, fuel, tilt, inv;
 let yoshi, yoshiWarned, yoshiActive, yoshiAte;
+let jumpT, jumpCool; // 0 = grounded, >0 = airborne frames
 let keys = {}, shakeT = 0, deathTime = 0;
 let touchX = null, touchDir = 0;
 let frame = 0;
@@ -149,6 +180,7 @@ function init() {
   van = { x: W() / 2, y: H() * 0.25, w: 39, h: 54, vx: 0 };
   obs = []; pix = []; parts = []; dust = [];
   spd = 2.5; dist = 0; fuel = 100; tilt = 0; inv = 0; shakeT = 0; frame = 0;
+  jumpT = 0; jumpCool = 0; // jump state
   yoshi = null; yoshiWarned = false; yoshiActive = false; yoshiAte = false;
   wBan.classList.remove('show');
 
@@ -207,10 +239,6 @@ function drawVan(x, y, lean) {
   cx.scale(0.85, 0.85);  // 15% smaller
   const w = 21, h = 33;
 
-  // shadow
-  cx.fillStyle = 'rgba(0,0,0,.07)';
-  cx.beginPath(); cx.ellipse(0, h + 5, 26, 7, 0, 0, Math.PI * 2); cx.fill();
-
   // body — van faces DOWN the hill (front at bottom)
   cx.fillStyle = P.body; cx.strokeStyle = P.bodyStroke;
   cx.lineWidth = 1.4; cx.lineJoin = 'round';
@@ -264,47 +292,39 @@ function drawVan(x, y, lean) {
 
 function drawTree(x, y, s) {
   cx.save(); cx.translate(x, y); s = s || 1;
-  // shadow
-  cx.fillStyle = 'rgba(0,0,0,.06)';
-  cx.beginPath(); cx.ellipse(2, 16 * s, 12 * s, 5 * s, 0, 0, Math.PI * 2); cx.fill();
-  // trunk
-  cx.fillStyle = '#6B5A3E'; cx.fillRect(-2.5 * s, 0, 5 * s, 16 * s);
-  // foliage (3 tiers)
-  [P.tree1, P.tree2, P.tree3].forEach((c, i) => {
-    cx.fillStyle = c; cx.beginPath();
-    cx.moveTo(0, (-28 + i * 8) * s);
-    cx.lineTo((-14 + i) * s, (-10 + i * 8) * s);
-    cx.lineTo((14 - i) * s, (-10 + i * 8) * s);
-    cx.closePath(); cx.fill();
-  });
+  // crude trunk
+  cx.fillStyle = P.trunk;
+  cx.fillRect(-2 * s, 2 * s, 4 * s, 12 * s);
+  // two flat triangles, no gradient
+  cx.fillStyle = P.treeDk;
+  cx.beginPath();
+  cx.moveTo(0, (-24) * s);
+  cx.lineTo((-12) * s, (-4) * s);
+  cx.lineTo((12) * s, (-4) * s);
+  cx.closePath(); cx.fill();
+  cx.fillStyle = P.treeLt;
+  cx.beginPath();
+  cx.moveTo(0, (-16) * s);
+  cx.lineTo((-14) * s, (6) * s);
+  cx.lineTo((14) * s, (6) * s);
+  cx.closePath(); cx.fill();
   cx.restore();
 }
 
 function drawRock(x, y, s) {
   cx.save(); cx.translate(x, y); s = s || 1;
-  cx.fillStyle = 'rgba(0,0,0,.05)';
-  cx.beginPath(); cx.ellipse(1, 6 * s, 14 * s, 5 * s, 0, 0, Math.PI * 2); cx.fill();
-  // main shape
-  cx.fillStyle = P.rock; cx.strokeStyle = P.inkFaint; cx.lineWidth = .8;
+  cx.fillStyle = P.rock;
   cx.beginPath();
-  cx.moveTo(-11 * s, 4 * s); cx.lineTo(-9 * s, -8 * s); cx.lineTo(2 * s, -11 * s);
-  cx.lineTo(12 * s, -6 * s); cx.lineTo(11 * s, 5 * s); cx.closePath();
-  cx.fill(); cx.stroke();
-  // highlight
-  cx.fillStyle = P.rockLt; cx.beginPath();
-  cx.moveTo(-5 * s, -6 * s); cx.lineTo(1 * s, -10 * s); cx.lineTo(8 * s, -5 * s); cx.lineTo(0, -3 * s);
-  cx.closePath(); cx.fill();
+  cx.moveTo(-9 * s, 3 * s); cx.lineTo(-7 * s, -6 * s); cx.lineTo(2 * s, -8 * s);
+  cx.lineTo(10 * s, -4 * s); cx.lineTo(8 * s, 4 * s); cx.closePath();
+  cx.fill();
   cx.restore();
 }
 
 function drawBush(x, y, s) {
   cx.save(); cx.translate(x, y); s = s || 1;
-  cx.fillStyle = 'rgba(0,0,0,.03)';
-  cx.beginPath(); cx.ellipse(0, 4 * s, 8 * s, 3 * s, 0, 0, Math.PI * 2); cx.fill();
-  cx.fillStyle = '#7A9A5E';
-  cx.beginPath(); cx.ellipse(0, -2 * s, 7 * s, 5 * s, 0, 0, Math.PI * 2); cx.fill();
-  cx.fillStyle = '#8AAA6A';
-  cx.beginPath(); cx.ellipse(-2 * s, -3 * s, 4 * s, 3.5 * s, 0, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = P.treeLt;
+  cx.beginPath(); cx.ellipse(0, 0, 6 * s, 4 * s, 0, 0, Math.PI * 2); cx.fill();
   cx.restore();
 }
 
@@ -463,6 +483,17 @@ function update() {
   tilt = van.vx * .6;
   van.x = Math.max(28, Math.min(w - 28, van.x));
 
+  // jump
+  if (jumpCool > 0) jumpCool--;
+  if (jumpT > 0) jumpT--;
+  if ((keys['Space'] || keys['KeyJ']) && jumpT === 0 && jumpCool === 0) {
+    jumpT = 36;    // ~0.6s airborne
+    jumpCool = 50;  // cooldown before next jump
+  }
+  // jump height: parabolic arc, peaks at frame 18
+  const jumpH = jumpT > 0 ? Math.sin((jumpT / 36) * Math.PI) * 40 : 0;
+  const airborne = jumpT > 0;
+
   // scroll = terrain moves UP as van goes downhill
   const scroll = spd * 1.4;
   dist += spd * .28;
@@ -515,8 +546,8 @@ function update() {
       addDust(yoshi.x + 12, yoshi.y + 36);
     }
 
-    // catch the van
-    if (Math.abs(yoshi.x - van.x) < 30 && Math.abs(yoshi.y - van.y) < 40) {
+    // catch the van (not if airborne)
+    if (!airborne && Math.abs(yoshi.x - van.x) < 30 && Math.abs(yoshi.y - van.y) < 40) {
       yoshiAte = true;
       shakeT = 25;
       burst(van.x, van.y, P.yG, 25);
@@ -525,9 +556,9 @@ function update() {
     }
   }
 
-  // ── collisions ──
+  // ── collisions (skip if airborne) ──
   if (inv > 0) inv--;
-  if (inv <= 0 && !yoshiAte) {
+  if (inv <= 0 && !airborne && !yoshiAte) {
     for (const o of obs) {
       if (o.hw === 0) continue; // skip bushes
       const dx = Math.abs(van.x - o.x);
@@ -571,6 +602,8 @@ function update() {
 
 function die(reason) {
   mode = 'dead'; shakeT = Math.max(shakeT, 18); deathTime = Date.now();
+  activeTouches = {}; touchDir = 0; keys['ArrowUp'] = false;
+  if (typeof touchZones !== 'undefined') touchZones.classList.remove('playing');
   if (!yoshiAte) { burst(van.x, van.y, P.signal, 20); burst(van.x, van.y, P.amber, 12); }
   if (Math.floor(dist) > best) best = Math.floor(dist);
   hB.textContent = best;
@@ -596,54 +629,31 @@ function draw() {
   cx.save();
   if (shakeT > 0) cx.translate((Math.random() - .5) * shakeT * .7, (Math.random() - .5) * shakeT * .7);
 
-  // ── terrain background ──
-  // gradient: greener at top (already passed), stonier at bottom (ahead)
-  const grad = cx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, P.grassLt);
-  grad.addColorStop(0.5, P.grass);
-  grad.addColorStop(1, P.grassDk);
-  cx.fillStyle = grad;
+  // ── terrain background — flat green ──
+  cx.fillStyle = P.grass;
   cx.fillRect(0, 0, w, h);
 
-  // terrain texture — grass tufts scrolling
-  cx.fillStyle = P.grassDk;
-  for (let y = 0; y < h; y += 14) {
-    const off = ((y + dist * 12) % 28) < 14 ? 0 : 12;
-    for (let x = off; x < w; x += 48) cx.fillRect(x, y, 18, 1.5);
-  }
-  cx.fillStyle = P.grassLt;
-  for (let y = 5; y < h; y += 26) {
-    const off = ((y + dist * 12 + 13) % 52) < 26 ? 22 : 0;
-    for (let x = off; x < w; x += 64) cx.fillRect(x, y, 12, 1);
-  }
-
-  // dirt patches (random based on distance)
-  cx.fillStyle = P.dirt;
-  cx.globalAlpha = .25;
-  const seed = Math.floor(dist / 2);
-  for (let i = 0; i < 5; i++) {
-    const px = ((seed * 13 + i * 997) % w);
-    const py = ((seed * 7 + i * 503 + dist * 12) % (h + 200)) - 100;
-    cx.beginPath(); cx.ellipse(px, py, 30 + (i * 17) % 20, 12 + (i * 11) % 8, (i * 0.5) % 1, 0, Math.PI * 2); cx.fill();
-  }
-  cx.globalAlpha = 1;
-
-  // snow patches at higher distances
-  if (dist > 300) {
-    cx.fillStyle = P.snow;
-    cx.globalAlpha = Math.min(.35, (dist - 300) / 1000);
-    for (let i = 0; i < 6; i++) {
-      const px = ((seed * 19 + i * 773) % w);
-      const py = ((seed * 11 + i * 601 + dist * 12) % (h + 300)) - 150;
-      cx.beginPath(); cx.ellipse(px, py, 40 + (i * 23) % 30, 15 + (i * 13) % 10, (i * 0.7) % 2, 0, Math.PI * 2); cx.fill();
+  // sparse pixel grass tufts — tiny, spindly, barely visible
+  cx.fillStyle = P.grassTuft;
+  const scrollY = dist * 12;
+  // use a seeded-ish pattern so tufts are consistent while scrolling
+  for (let gy = -20; gy < h + 20; gy += 80) {
+    for (let gx = 30; gx < w; gx += 110) {
+      // offset every other row
+      const ox = ((gy / 80) % 2) * 55;
+      const px = gx + ox + ((gx * 7 + gy * 13) % 40) - 20;
+      const py = gy + (scrollY % 80) + ((gx * 3 + gy * 11) % 30) - 15;
+      // single pixel tuft — 1-3 tiny lines
+      cx.fillRect(px, py, 1, 3);
+      if ((gx * gy) % 3 === 0) cx.fillRect(px + 2, py + 1, 1, 2);
+      if ((gx * gy) % 7 === 0) cx.fillRect(px - 1, py + 1, 1, 2);
     }
-    cx.globalAlpha = 1;
   }
 
   // dust particles
   for (const d of dust) {
     cx.globalAlpha = (d.life / d.ml) * .22;
-    cx.fillStyle = P.dirtDk;
+    cx.fillStyle = P.grassTuft;
     cx.beginPath(); cx.arc(d.x, d.y, d.r, 0, Math.PI * 2); cx.fill();
   }
   cx.globalAlpha = 1;
@@ -674,7 +684,17 @@ function draw() {
         break;
       case 'van':
         if (inv > 0 && Math.floor(inv / 5) % 2) cx.globalAlpha = .4;
-        drawVan(van.x, van.y, tilt);
+        if (jumpH > 0) {
+          // ground shadow (stays at ground level, shrinks with height)
+          const shadowScale = 1 - jumpH / 60;
+          cx.fillStyle = 'rgba(0,0,0,.1)';
+          cx.beginPath();
+          cx.ellipse(van.x, van.y + 28, 20 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2);
+          cx.fill();
+          drawVan(van.x, van.y - jumpH, tilt);
+        } else {
+          drawVan(van.x, van.y, tilt);
+        }
         cx.globalAlpha = 1;
         break;
       case 'yoshi':
@@ -705,11 +725,34 @@ function draw() {
 
 // ── input ──
 
+const isMobile = matchMedia('(hover:none) and (pointer:coarse)').matches;
+const touchZones = document.getElementById('touchZones');
+const tzL = document.getElementById('tzL');
+const tzM = document.getElementById('tzM');
+const tzR = document.getElementById('tzR');
+
+// detect mobile → swap instructions
+if (isMobile) {
+  document.getElementById('startPrompt').textContent = 'tap to start';
+  document.getElementById('ctrlHint').innerHTML = 'left · right · center = jump';
+}
+
+function goFullscreen() {
+  const el = document.getElementById('gw');
+  if (el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  // re-measure after entering fullscreen
+  setTimeout(resize, 200);
+  setTimeout(resize, 600);
+}
+
 function tryStart() {
   if (mode === 'dead' && Date.now() - deathTime < 800) return;
+  if (isMobile) goFullscreen();
   init(); resize(); mode = 'play';
   titOv.classList.add('hidden');
   endOv.classList.add('hidden');
+  touchZones.classList.add('playing');
 }
 
 document.addEventListener('keydown', e => {
@@ -718,21 +761,78 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => keys[e.code] = false);
 
+// ── zone-based touch controls ──
+// Left third = steer left, right third = steer right, center = boost
+let activeTouches = {};
+
+function classifyTouch(clientX) {
+  const w = cv.getBoundingClientRect().width;
+  const rel = clientX / w;
+  if (rel < 0.33) return 'left';
+  if (rel > 0.67) return 'right';
+  return 'boost';
+}
+
+function updateTouchState() {
+  touchDir = 0;
+  let jumping = false;
+  for (const id in activeTouches) {
+    const zone = activeTouches[id];
+    if (zone === 'left') touchDir = -1;
+    if (zone === 'right') touchDir = 1;
+    if (zone === 'boost') jumping = true;
+  }
+  keys['Space'] = jumping;  // center zone = jump
+
+  // visual feedback
+  tzL.classList.toggle('active', !!Object.values(activeTouches).find(z => z === 'left'));
+  tzR.classList.toggle('active', !!Object.values(activeTouches).find(z => z === 'right'));
+  tzM.classList.toggle('active', jumping);
+}
+
 cv.addEventListener('touchstart', e => {
   e.preventDefault();
   if (mode !== 'play') { tryStart(); return; }
-  touchX = e.touches[0].clientX;
+  for (const t of e.changedTouches) {
+    activeTouches[t.identifier] = classifyTouch(t.clientX);
+  }
+  updateTouchState();
 }, { passive: false });
+
 cv.addEventListener('touchmove', e => {
   e.preventDefault();
-  if (touchX !== null) {
-    const dx = e.touches[0].clientX - touchX;
-    touchDir = dx > 20 ? 1 : dx < -20 ? -1 : 0;
+  for (const t of e.changedTouches) {
+    activeTouches[t.identifier] = classifyTouch(t.clientX);
   }
+  updateTouchState();
 }, { passive: false });
+
 cv.addEventListener('touchend', e => {
-  e.preventDefault(); touchX = null; touchDir = 0;
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    delete activeTouches[t.identifier];
+  }
+  updateTouchState();
 }, { passive: false });
+
+cv.addEventListener('touchcancel', e => {
+  for (const t of e.changedTouches) {
+    delete activeTouches[t.identifier];
+  }
+  updateTouchState();
+});
+
+// also handle touches on the overlays
+document.querySelectorAll('.ov').forEach(el => {
+  el.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (mode !== 'play') tryStart();
+  }, { passive: false });
+});
+
+// fullscreen exit → resize
+document.addEventListener('fullscreenchange', () => setTimeout(resize, 100));
+document.addEventListener('webkitfullscreenchange', () => setTimeout(resize, 100));
 
 // ── loop ──
 init();
