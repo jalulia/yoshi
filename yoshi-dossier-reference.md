@@ -1,6 +1,6 @@
 # Yoshi Dossier — Build Reference
 
-// Next Update i.e ## v7.2 — [date]
+// Next Update i.e ## v0.0 — [date]
 
 **Changes:**
 - [what changed]
@@ -10,6 +10,20 @@
 
 **New rules:**
 - [any new patterns established]
+
+
+---
+
+## v7.2 — 21 May 2026
+
+**Fixes:**
+- All `<a>` clicks inside editing sections now blocked via capture-phase handler — prevents browser auto-linkification from navigating away during editing
+- Covers: auto-linkified URLs in contenteditable, old saved `<a>` link cards from pre-v7.1, inline links
+
+**New rule:**
+- Capture-phase click listener (`true` third arg on `addEventListener`) is required to intercept link clicks before browser default behavior fires
+
+---
 
 #v7.1
 **Document:** `index.html` (~4820 lines, single self-contained file)
