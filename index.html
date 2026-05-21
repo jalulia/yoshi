@@ -801,8 +801,8 @@
 
   /* Editing state — dashed outline + sticky section head for long sections */
   section.editing {
-    outline: 1px dashed var(--rule);
-    outline-offset: 8px;
+    outline: 2px dashed var(--rule);
+    outline-offset: 12px;
   }
   section.editing > .section-head {
     position: sticky;
@@ -1093,9 +1093,10 @@
     left: 0;
     right: 0;
     top: 50%;
-    height: 1px;
-    background: var(--signal);
-    opacity: 0.4;
+    height: 0;
+    border-top: 1.5px dashed var(--signal);
+    opacity: 0.5;
+    transition: opacity 0.15s, border-style 0.15s;
   }
   .add-point::after {
     content: '+';
@@ -1112,11 +1113,23 @@
     font-size: 14px;
     color: var(--signal);
     background: var(--paper);
-    border: 1px solid var(--signal);
+    border: 1.5px solid var(--signal);
     border-radius: 50%;
     line-height: 1;
+    transition: background 0.15s, color 0.15s;
   }
+  /* Visible by default in edit mode */
+  section.editing .add-point { opacity: 0.5; }
+  /* Full visibility + fill on hover */
   section.editing .add-point:hover { opacity: 1; }
+  section.editing .add-point:hover::before {
+    border-top-style: solid;
+    opacity: 1;
+  }
+  section.editing .add-point:hover::after {
+    background: var(--signal);
+    color: var(--paper);
+  }
 
   /* ── ADD panel (Phase 4) ── */
   .add-panel-overlay {
@@ -2845,6 +2858,14 @@ window.DossierApp = (function() {
       e.preventDefault();
       document.execCommand('italic', false);
     }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      document.execCommand('undo', false);
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+      e.preventDefault();
+      document.execCommand('redo', false);
+    }
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
       const sel = window.getSelection();
@@ -3934,17 +3955,20 @@ window.DossierApp = (function() {
   function doEnterEdit(id, sec, editBtn, cancelBtn) {
     _originals[id] = sec.innerHTML;
     _activeSection = { id, sec, editBtn, cancelBtn };
-    sec.contentEditable = 'true';
+
+    // UI updates
     sec.classList.add('editing');
     editBtn.textContent = 'save';
     editBtn.classList.add('active');
     cancelBtn.style.display = '';
 
-    // SVG protection — lock all SVGs, add double-click hints
+    // SVG protection — lock figures BEFORE contentEditable is set
+    sec.querySelectorAll('.figure, .fig-frame').forEach(fig => {
+      fig.setAttribute('contenteditable', 'false');
+    });
     sec.querySelectorAll('.fig-frame').forEach(frame => {
       const svg = frame.querySelector('svg');
       if (!svg) return;
-      // Hint badge
       let hint = frame.querySelector('.svg-edit-hint');
       if (!hint) {
         hint = document.createElement('span');
@@ -3953,15 +3977,15 @@ window.DossierApp = (function() {
         frame.style.position = 'relative';
         frame.appendChild(hint);
       }
-      // Double-click handler
       frame._dblHandler = function(e) {
         e.stopPropagation();
+        fig.setAttribute('contenteditable', 'true');
         svg.classList.add('svg-editing');
         hint.textContent = 'editing diagram';
         hint.classList.add('active');
-        // Click outside SVG to re-lock
         function lockSvg(ev) {
-          if (!svg.contains(ev.target)) {
+          if (!svg.contains(ev.target) && !frame.contains(ev.target)) {
+            fig.setAttribute('contenteditable', 'false');
             svg.classList.remove('svg-editing');
             hint.textContent = 'double-click to edit';
             hint.classList.remove('active');
@@ -3975,6 +3999,11 @@ window.DossierApp = (function() {
 
     // Inject block insertion points (Phase 4)
     if (window._injectAddPoints) window._injectAddPoints(sec);
+
+    // Set contentEditable LAST — after all programmatic DOM changes
+    // so the browser's undo stack starts clean
+    sec.contentEditable = 'true';
+    sec.focus();
   }
 
   /* ── Cancel edit (restore original) ── */
