@@ -2778,6 +2778,13 @@ window.DossierApp = (function() {
     }
     _addBtn.style.display = '';
     tocList.addEventListener('click', handleRowControl);
+    tocList.addEventListener('click', killNavigation, true); // capture phase to block links
+  }
+
+  /* ── Prevent <a> navigation in manage mode ── */
+  function killNavigation(e) {
+    const link = e.target.closest('a');
+    if (link) e.preventDefault();
   }
 
   /* ── Exit manage mode — save + cascade ── */
@@ -2815,6 +2822,7 @@ window.DossierApp = (function() {
 
     if (_addBtn) _addBtn.style.display = 'none';
     tocList.removeEventListener('click', handleRowControl);
+    tocList.removeEventListener('click', killNavigation, true);
 
     cascadeToSections(items);
     saveToSupabase(items);
